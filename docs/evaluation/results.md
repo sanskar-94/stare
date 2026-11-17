@@ -15,9 +15,9 @@ Generated 2026-10-20T22:33:30+00:00 with LLM provider `offline`, embedder `lsa`,
 | Latency, approved plan to memo (p95) | 1.231 s | < 90 s |
 | Citation accuracy, reviewed: exists **and supports the statement** (74 citations from the offline run, [support_review.md](support_review.md)) | 0.986 | ≥ 0.94 |
 | Hallucination rate, reviewed: citations that do not support their statement | 0.014 | ≤ 0.02 |
-| Baseline comparison: citation accuracy, general-purpose LLM without retrieval (`opencode/beam-free (free general-purpose LLM, no retrieval)`, 100 questions, 564 citations) | 0.965 (STARE 1.000) | STARE higher |
-| Baseline accuracy over citations the Firewall could check (10 unresolved excluded) | 0.982 | — |
-| Baseline citations blocked as nonexistent or misquoted | 10 of 564 | — |
+| Baseline comparison: citation accuracy, general-purpose LLM without retrieval (`opencode/beam-free (free general-purpose LLM, no retrieval)`, 100 questions, 563 citations) | 0.977 (STARE 1.000) | STARE higher |
+| Baseline accuracy over citations the Firewall could check (3 unresolved excluded) | 0.982 | — |
+| Baseline citations blocked as nonexistent or misquoted | 7 of 563 | — |
 
 Notes:
 - Citation counts are per occurrence. The automated accuracy is measured over the citations left in the final memos, after the Firewall removed failing ones, so it counts warnings (e.g. a near-match quotation or good-law status not checked) as accurate; the strict row counts only fully verified citations. The hallucination rate counts the citations the drafter (the LLM, or the offline extractive drafter) wrote in the issue, rule, application and conclusion, before the memo Firewall pass; the question presented and the adverse-authority list are not drafted (they come from the gold question and the Firewall-checked adverse authorities). `hallucination_rate` in results.json keeps the earlier definition for comparison with older reports.

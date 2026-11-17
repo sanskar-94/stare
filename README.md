@@ -64,7 +64,7 @@ Requirements: Python 3.12 (`uv` recommended), Node 20+, Tesseract (`brew install
 # backend
 cd backend
 uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python -e '.[presidio,dev]'
+uv pip install --python .venv/bin/python -e '.[presidio,llm,dev]'   # llm: provider SDKs, needed by the LLM-mode tests
 .venv/bin/python -m spacy download en_core_web_sm
 
 .venv/bin/stare ingest all --offline   # courts, seed opinions, statutes, chunks (from data/seed/raw, no network)
