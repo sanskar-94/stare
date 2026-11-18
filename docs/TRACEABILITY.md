@@ -52,7 +52,7 @@ implemented and how it is verified. Paths are relative to `backend/` unless note
 
 | PB | Item | Status |
 |---|---|---|
-| PB-01 | CourtListener and CAP import | Done: seed corpus built from CAP/CourtListener; bulk importers implemented and tested on fixtures |
+| PB-01 | CourtListener and CAP import | Done: seed corpus built from CAP/CourtListener and grown to 5,120 opinions by citation expansion (`stare ingest expand`, `data/expansion`); bulk importers implemented and tested on fixtures |
 | PB-02 | Local citation index | Done (`citations` table, reporter normalisation) |
 | PB-03 | Chunking, embeddings, BM25 | Done |
 | PB-04 | Hybrid search with RRF and reranker | Done |

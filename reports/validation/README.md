@@ -8,7 +8,7 @@ files here make them quick to run and record.
 | 4. Team review of the gold questions and the support-review verdicts | Adarsh (all review) | `gold-set-review.csv`, `support-verdicts-review.csv` | about 2 hours, split four ways |
 | 5. Usability check with the four personas (NFR-07) | Rahul | `usability-check-NFR-07.md` | about 25 minutes per participant |
 | 6. Feedback on a sample memo from a lawyer or law-faculty member | All | `lawyer-review-form.md` + `sample-memo-ndtex-title7.docx` | about 20 minutes for the reviewer |
-| 8. Demonstration video | All | `../STARE MVP demo (captioned).webm` | done: a captioned 77-second walkthrough recorded from the app; record a narrated version if the course needs one |
+| 8. Demonstration video | All | `../STARE MVP demo (captioned).webm` | done: a captioned 79-second walkthrough recorded from the app on the 5,120-opinion corpus; record a narrated version if the course needs one |
 
 ## How to do each one
 
