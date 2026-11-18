@@ -131,6 +131,33 @@ def ingest_cap_bulk(
     _echo(f"{import_cap_bulk(path, limit=limit or None, employment_only=not all_cases)} opinions imported")
 
 
+@ingest_app.command("expand")
+def ingest_expand(
+    online: bool = typer.Option(True, help="Fetch new cases from CAP (off: import the committed cache only)"),
+    hops: int = typer.Option(2, help="Citation steps out from the seed"),
+    min_cited_by: int = typer.Option(2, help="From hop 2 on: kept opinions that must cite a case to follow it"),
+    workers: int = typer.Option(96, help="Parallel downloads"),
+) -> None:
+    """Grow the corpus from CAP by following the seed's citations to other federal employment opinions.
+
+    Writes data/expansion/ (manifest + gzip text shards), imports it and rebuilds the chunks.
+    Run `stare index build` afterwards."""
+    from stare.db import init_db, session_scope
+    from stare.ingest import expand
+    from stare.ingest.pipeline import corpus_counts, load_courts, rebuild_chunks
+
+    init_db()
+    with session_scope() as s:
+        load_courts(s)
+    if online:
+        _echo(str(expand.snowball(hops=hops, min_cited_by=(1, min_cited_by), workers=workers, say=_echo)))
+    with session_scope() as s:
+        _echo(str(expand.import_expansion(s, say=_echo)))
+        rebuild_chunks(s)
+        for k, v in corpus_counts(s).items():
+            _echo(f"{k:>18}: {v}")
+
+
 @ingest_app.command("courtlistener-bulk")
 def ingest_courtlistener_bulk(
     directory: Path = typer.Argument(..., exists=True, file_okay=False, help="Directory of CourtListener bulk CSVs"),

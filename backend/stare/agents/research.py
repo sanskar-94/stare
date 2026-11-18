@@ -3,16 +3,23 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 
 from pydantic import BaseModel
 from sqlalchemy import select
 
 from stare.agents.base import AgentResult, BaseAgent
-from stare.agents.state import ResearchState, dump, load_plan
+from stare.agents.state import ResearchState, dump, load_case_record, load_plan
 from stare.intake.elements import PROCEDURAL, STATUTE_LABEL, THEORIES
 from stare.llm.base import LLMError
-from stare.db.models import StatuteSection
+from stare.db.models import CitationEdge, StatuteSection
 from stare.schemas import Authority, PlanItem
+
+# Co-citation: among the best case authorities found for a plan item, an opinion that many of them cite is a
+# leading authority on the point even if lower courts quoting it outscore it in text search.
+COCITE_TOP = 20  # how many found case authorities vote
+COCITE_MIN = 3  # votes needed to promote a cited opinion
+COCITE_MAX = 8  # opinions promoted per plan item
 
 _SECTION_REF = re.compile(r"§\s*(\d+[a-z]?(?:-\d+)?(?:\.\d+)?)")
 
@@ -130,8 +137,62 @@ class ResearchAgent(BaseAgent):
         have = {a.key for a in kept}
         return [p for p in pinned if p.key not in have] + kept
 
+    def binding_courts(self, filing_court: str | None) -> list[str]:
+        """The Supreme Court and the filing court's own court of appeals: the courts whose published
+        decisions bind it (Table 26). Searched separately so that the many lower-court opinions quoting a
+        leading case cannot crowd the leading case itself out of the candidates."""
+        h = self.deps.hierarchy
+        circuit = h.circuit_of(filing_court)
+        appellate = [c.id for c in h.all() if c.level == "appellate" and circuit and c.circuit == circuit]
+        return ["scotus", *appellate]
+
+    def cocited(self, queries: list[str], found: list[Authority], k: int) -> list[Authority]:
+        """Opinions cited by at least COCITE_MIN of the item's top case authorities (citation edges), with
+        their own best-matching passages. Relevance is 0.5 + the share of top authorities citing them (max 1)."""
+        voters = sorted((a for a in found if a.kind == "case" and a.opinion_id), key=lambda a: a.relevance,
+                        reverse=True)[:COCITE_TOP]
+        if len(voters) < COCITE_MIN:
+            return []
+        ids = {a.opinion_id for a in voters}
+        with self.deps.session_factory() as s:
+            pairs = set(s.execute(select(CitationEdge.citing_id, CitationEdge.cited_id)
+                                  .where(CitationEdge.citing_id.in_(ids))).all())
+        votes = Counter(cited for _, cited in pairs)
+        share = {oid: n / len(voters) for oid, n in votes.items() if n >= COCITE_MIN}
+        top = sorted(share, key=share.get, reverse=True)[:COCITE_MAX]
+        if not top:
+            return []
+        chunks = self.deps.retriever.search_many(queries, k=k, opinion_ids=top)
+        return [a.model_copy(update={"relevance": round(min(1.0, 0.5 + share[a.opinion_id]), 6)})
+                for a in self.deps.retriever.authorities_from_chunks(chunks, limit=len(top))
+                if a.opinion_id in share]
+
+    def gather(self, queries: list[str], k: int, limit: int, binding: list[str],
+               statute_item: PlanItem | None = None) -> list[Authority]:
+        """Open hybrid search, then separate passes over the statutes and regulations (plan items only), the
+        Supreme Court and the filing court's circuit, then co-cited leading opinions."""
+        r = self.deps.retriever
+        found = r.authorities_from_chunks(r.search_many(queries, k=k), limit=limit)
+        if statute_item is not None:
+            # The statute and regulation text gets its own pass too: with thousands of opinions quoting it,
+            # the enacted text itself would otherwise rank below the opinions.
+            primary = r.search_many(queries, k=k, kinds=["statute", "regulation"])
+            found = self.statute_filter(found + r.authorities_from_chunks(primary, limit=max(4, limit // 4)),
+                                        statute_item)
+        # Supreme Court and the filing court's circuit are searched separately, each with its own slots, so
+        # neither crowds the other out (the circuit has far more opinions in the corpus).
+        for courts in (binding[:1], binding[1:]):
+            if courts:
+                bound = r.search_many(queries, k=k, kinds=["opinion"], court_ids=courts)
+                found += r.authorities_from_chunks(bound, limit=max(4, limit // 2))
+        return found + self.cocited(queries, found, k)
+
     def execute(self, state: ResearchState) -> AgentResult:
         plan = load_plan(state)
+        try:
+            binding = self.binding_courts(load_case_record(state).court_id)
+        except Exception:  # no case record yet (e.g. a bare research question): open search only
+            binding = ["scotus"]
         settings = self.deps.settings
         loop = state.get("loop_count", 0)
         rejected = {r.get("key") for r in state.get("rejected") or [] if r.get("key")}
@@ -145,9 +206,9 @@ class ResearchAgent(BaseAgent):
             pairs = self.build_queries(item, plan.instructions, broaden=loop > 0)
             n_queries += len(pairs)
             element_of = {q: e for q, e in pairs}
-            chunks = self.deps.retriever.search_many([q for q, _ in pairs], k=k)
+            queries = [q for q, _ in pairs]
             limit = max(8, settings.max_candidates // max(1, len(plan.items)))
-            found = self.statute_filter(self.deps.retriever.authorities_from_chunks(chunks, limit=limit), item)
+            found = self.gather(queries, k, limit, binding, statute_item=item)
             for a in found:
                 if a.key in rejected or (a.kind == "case" and not statute_consistent(a, item)):
                     continue
@@ -162,8 +223,7 @@ class ResearchAgent(BaseAgent):
         checked = [i for i in plan.items if i.checked]
         if direct and checked:
             n_queries += len(direct)
-            chunks = self.deps.retriever.search_many(direct, k=k)
-            for a in self.deps.retriever.authorities_from_chunks(chunks, limit=10):
+            for a in self.gather(direct, k, 10, binding):
                 if a.kind != "case" or a.key in rejected:
                     continue  # statutes stay tied to their plan item (statute_filter)
                 if a.key in by_key:

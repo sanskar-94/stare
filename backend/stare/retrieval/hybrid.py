@@ -102,18 +102,20 @@ class HybridRetriever:
         self._loaded_mtime = mtime
 
     # ------------------------------------------------------------------ search
-    def _allowed_ids(self, session: Session, kinds, court_ids) -> set[int] | None:
-        if not kinds and not court_ids:
+    def _allowed_ids(self, session: Session, kinds, court_ids, opinion_ids=None) -> set[int] | None:
+        if not kinds and not court_ids and not opinion_ids:
             return None
         q = select(Chunk.id)
         if kinds:
             q = q.where(Chunk.kind.in_(kinds))
+        if opinion_ids:
+            q = q.where(Chunk.opinion_id.in_(list(opinion_ids)))
         if court_ids:
             q = q.join(Opinion, Opinion.id == Chunk.opinion_id).where(Opinion.court_id.in_(court_ids))
         return set(session.scalars(q))
 
     def _dense_search(
-        self, session: Session, query: str, n: int, kinds, court_ids, allowed: set[int] | None
+        self, session: Session, query: str, n: int, kinds, court_ids, allowed: set[int] | None, opinion_ids=None
     ) -> list[int]:
         assert self._embedder is not None
         qv = self._embedder.embed([query])[0]
@@ -127,6 +129,9 @@ class HybridRetriever:
                 sql += "JOIN opinions o ON o.id = c.opinion_id "
                 where.append("o.court_id = ANY(:courts)")
                 params["courts"] = list(court_ids)
+            if opinion_ids:
+                where.append("c.opinion_id = ANY(:ops)")
+                params["ops"] = list(opinion_ids)
             if kinds:
                 where.append("c.kind = ANY(:kinds)")
                 params["kinds"] = list(kinds)
@@ -140,15 +145,17 @@ class HybridRetriever:
 
     def search(
         self, query: str, k: int = 30, *, kinds: Collection[str] | None = None,
-        court_ids: Collection[str] | None = None,
+        court_ids: Collection[str] | None = None, opinion_ids: Collection[int] | None = None,
     ) -> list[RetrievedChunk]:
         self._load()
         assert self._bm25 is not None
         n = max(self.settings.candidates_per_query, k)
         with self.session_factory() as s:
-            allowed = self._allowed_ids(s, kinds, court_ids)
+            allowed = self._allowed_ids(s, kinds, court_ids, opinion_ids)
+            if opinion_ids and not allowed:
+                return []
             bm25_ids = [cid for cid, _ in self._bm25.search(query, n, allowed)]
-            dense_ids = self._dense_search(s, query, n, kinds, court_ids, allowed)
+            dense_ids = self._dense_search(s, query, n, kinds, court_ids, allowed, opinion_ids)
             fused = rrf([bm25_ids, dense_ids], self.settings.rrf_k)[: max(2 * k, 50, 0)]
             if not fused:
                 return []

@@ -182,7 +182,12 @@ def evaluate(limit: int | None = None, settings: Settings | None = None, say=lam
             f"violations={r.export_violations} {r.latency_s:.1f}s {r.error}")
     ok = [r for r in results if not r.error]
     latencies = [r.latency_s for r in ok]
+    from stare.ingest.pipeline import corpus_counts
+
+    with deps.session_factory() as s:
+        corpus = corpus_counts(s)
     summary = {
+        "corpus": corpus,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "llm_provider": deps.llm.name,
         "llm_calls": deps.llm.usage.calls,
@@ -218,7 +223,7 @@ def _support_rows(out_dir: Path) -> list[str]:
     n = r["citations"]
     ok = r["states_rule"] + r["pertinent_weaker_quote"]
     return [
-        f"| Citation accuracy, reviewed: exists **and supports the statement** ({n} citations from the offline run, "
+        f"| Citation accuracy, reviewed: exists **and supports the statement** ({n} citations from the offline run on the 151-opinion seed corpus, 20 October 2026, "
         f"[support_review.md](support_review.md)) "
         f"| {ok / n:.3f} | ≥ 0.94 |",
         f"| Hallucination rate, reviewed: citations that do not support their statement | {r['not_supporting'] / n:.3f} | ≤ 0.02 |",
@@ -258,7 +263,9 @@ def write_report(result: dict, out_dir: Path = OUT_DIR) -> Path:
         "# STARE evaluation results",
         "",
         f"Generated {s['generated_at']} with LLM provider `{s['llm_provider']}`, embedder `{s['embedder']}`, "
-        f"reranker `{s['reranker']}`, on {s['questions']} gold questions ({s['errors']} errors).",
+        f"reranker `{s['reranker']}`, on {s['questions']} gold questions ({s['errors']} errors)."
+        + (f" Corpus: {s['corpus']['opinions']:,} opinions, {s['corpus']['statute_sections']} statute and regulation "
+           f"sections, {s['corpus']['chunks']:,} search chunks." if s.get("corpus") else ""),
         *(["", f"LLM calls: {s.get('llm_calls', 0)} answered, {s.get('llm_failures', 0)} failed, "
                f"{s.get('llm_retries', 0)} retried after an unusable JSON reply; "
                f"{s.get('memos_drafted_by_llm', 0)} of {s['questions'] - s['errors']} memos drafted by the LLM "

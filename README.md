@@ -20,7 +20,7 @@ complaint PDF ─▶ Intake (PyMuPDF + Tesseract OCR, PII redaction) ─▶ case
                                                   │
                                     ■ attorney approves the plan (hard gate)
                                                   ▼
- Research (BM25 + dense, RRF, rerank) ─▶ Precedent (binding / persuasive for the court of filing)
+ Research (BM25 + dense, RRF, rerank; binding-court pass; co-citation) ─▶ Precedent (binding / persuasive)
    ─▶ Opposing Counsel (adverse authority, timeliness defences)
    ─▶ Citation Firewall: Gate 1 extract · Gate 2 exists (+ case-name match) · Gate 3 quote match · Gate 4 good law
    ─▶ (too few verified? search again, max 3 loops)
@@ -34,7 +34,9 @@ complaint PDF ─▶ Intake (PyMuPDF + Tesseract OCR, PII redaction) ─▶ case
 * **Citation Firewall.** Verification is deterministic and never asks the LLM whether its own sources
   are good. All six fabricated citations from *Mata v. Avianca* are blocked (`stare eval mata`).
 * **Authority ranking.** Each authority is ranked by the court hierarchy (Table 26), not only by
-  similarity. A Fifth Circuit case binds N.D. Tex.; a Ninth Circuit case does not.
+  similarity. A Fifth Circuit case binds N.D. Tex.; a Ninth Circuit case does not. The Research Agent also
+  searches the binding courts on their own and follows the citation network: an opinion that most of the
+  retrieved authorities cite is promoted as a leading case.
 * **Opposing Counsel agent.** It searches only for authority that hurts the client, and it applies
   deterministic EEOC-charge timeliness checks to the extracted dates.
 * **Opinion parts.** Dissents, concurrences and the Reporter's syllabus are tracked separately. STARE
@@ -52,7 +54,8 @@ STARE runs fully offline at $0 on an 8 GB laptop. The defaults are:
 * SQLite
 * LSA embeddings
 * a lexical reranker
-* a curated seed corpus
+* a corpus of 5,120 real federal employment-discrimination opinions (151 hand-picked leading cases plus
+  4,969 found by following their citations), cached in the repository so it builds offline
 
 Each heavier option from the proposal (Claude or a local model, PostgreSQL + pgvector, neural
 embeddings, a cross-encoder, bulk CourtListener import) is one setting away. See
@@ -69,8 +72,8 @@ uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e '.[presidio,llm,dev]'   # llm: provider SDKs, needed by the LLM-mode tests
 .venv/bin/python -m spacy download en_core_web_sm
 
-.venv/bin/stare ingest all --offline   # courts, seed opinions, statutes, chunks (from data/seed/raw, no network)
-.venv/bin/stare index build            # BM25 + LSA dense index (≈6 s)
+.venv/bin/stare ingest all --offline   # courts, 5,120 opinions, statutes, chunks (from data/seed + data/expansion, no network)
+.venv/bin/stare index build            # BM25 + LSA dense index (≈2 min for 104k chunks)
 .venv/bin/stare db seed-users          # attorney@ / paralegal@ / admin@stare.local, password: stare-demo
 .venv/bin/stare serve                  # http://127.0.0.1:8000  (OpenAPI docs at /docs)
 
@@ -93,7 +96,8 @@ All parties and personal details in them are fictional.
 
 | Command | What it does |
 |---|---|
-| `stare ingest all [--offline]` | Build the corpus: courts, seed opinions (CAP/CourtListener), statutes and regulations, chunks |
+| `stare ingest all [--offline]` | Build the corpus: courts, seed opinions (CAP/CourtListener), the citation-expanded opinions, statutes and regulations, chunks |
+| `stare ingest expand [--no-online]` | Grow the corpus by following citations out from the seed (CAP), then import it ([data/expansion](data/expansion/README.md)) |
 | `stare ingest cap-bulk PATH` / `courtlistener-bulk DIR` | Import downloaded bulk data (heavy path) |
 | `stare ingest refresh [--bulk-dir DIR]` | Monthly refresh: newer bulk data, new seed cases, fresh statute text, chunks and index (cron: `0 3 1 * *`) |
 | `stare index build` / `stare index search "query"` | Build or query the hybrid retrieval index |
@@ -150,7 +154,7 @@ backend/stare/
   api/           FastAPI app, JWT auth and roles, routers, SSE live trace
   eval/          evaluation harness and LLM baseline
 frontend/src/    React research workspace (trace, sources, plan, memo editor, precedent graph, draft checker)
-data/            seed corpus cache, statutes cache, court registry, samples, gold set, Mata fixture
+data/            seed and expanded corpus caches, statutes cache, court registry, samples, gold set, Mata fixture
 docs/            contracts, design document, traceability, evaluation results
 ```
 
@@ -169,4 +173,4 @@ Case law comes from the [Caselaw Access Project](https://case.law/) (Harvard Law
 Lab) and [CourtListener](https://www.courtlistener.com/) (Free Law Project). Statutes come from the
 [Legal Information Institute](https://www.law.cornell.edu/uscode/text) and regulations from the
 [eCFR](https://www.ecfr.gov/). All are public legal data, used under the providers' terms. See
-`data/seed/README.md` and `data/statutes/README.md`.
+`data/seed/README.md`, `data/expansion/README.md` and `data/statutes/README.md`.

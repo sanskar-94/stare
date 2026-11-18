@@ -101,6 +101,6 @@ def test_committed_seed_builds_offline(session):
 
 
 def test_build_corpus_offline_end_to_end(session):
-    counts = build_corpus(session, offline_only=True)
+    counts = build_corpus(session, offline_only=True, expansion=False)  # seed only: keeps the test fast
     assert counts["opinions"] >= 80 and counts["statute_sections"] >= 100 and counts["chunks"] > counts["opinions"]
     assert session.scalars(select(StatuteSection).where(StatuteSection.citation == "42 U.S.C. § 2000e-3")).one()

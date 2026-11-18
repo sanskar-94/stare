@@ -113,7 +113,8 @@ def _norm_name(s: str) -> str:
 def _court_id(case: dict, hierarchy: CourtHierarchy) -> str | None:
     # Only the Supreme Court is reported in U.S. Reports / S. Ct. / L. Ed.; CAP's court field is sometimes
     # the lower court for these volumes, so the reporter decides.
-    if any(re.match(r"\d+\s+(?:U\.\s?S\.|S\.\s?Ct\.|L\.\s?Ed)", c.get("cite", "")) for c in case.get("citations", [])
+    # "U.S. App. D.C." is the D.C. Circuit's reporter, not U.S. Reports.
+    if any(re.match(r"\d+\s+(?:U\.\s?S\.(?!\s*App)|S\.\s?Ct\.|L\.\s?Ed)", c.get("cite", "")) for c in case.get("citations", [])
            if c.get("type") == "official"):
         return "scotus"
     court = case.get("court") or {}

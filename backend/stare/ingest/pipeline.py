@@ -68,12 +68,16 @@ def corpus_counts(session: Session) -> dict[str, int]:
     }
 
 
-def build_corpus(session: Session, *, offline_only: bool = True,
+def build_corpus(session: Session, *, offline_only: bool = True, expansion: bool = True,
                  say: Callable[[str], None] = lambda s: None) -> dict[str, int]:
-    """courts + seed + statutes + chunks. (Retrieval index build is `HybridRetriever.build_index`.)"""
+    """courts + seed (+ the CAP expansion when present) + statutes + chunks. (Retrieval index build is `HybridRetriever.build_index`.)"""
     load_courts(session)
     seed = build_seed(session, offline=offline_only, say=say)
     say(f"seed: {seed}")
+    from stare.ingest.expand import EXPANSION_DIR, import_expansion
+
+    if expansion and any(EXPANSION_DIR.glob("cases-*.jsonl.gz")):
+        say(f"expansion: {import_expansion(session, say=say)}")
     import_statutes(session, offline=offline_only, say=say)
     rebuild_chunks(session)
     return corpus_counts(session)

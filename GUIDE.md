@@ -10,7 +10,8 @@ hurts the client. The **Citation Firewall** checks every citation against real c
 drafts an IRAC memo. Nothing can be exported until an attorney approves the memo. Fake citations, like the
 six in *Mata v. Avianca*, are blocked.
 
-By default STARE runs fully offline and free on a laptop. It uses SQLite and a rule-based "offline" model,
+Its case law is 5,120 real federal employment-discrimination opinions (328 Supreme Court, 4,313 courts of
+appeals, 479 district courts) plus the Title VII, ADA and ADEA statutes and regulations. By default STARE runs fully offline and free on a laptop. It uses SQLite and a rule-based "offline" model,
 so no API key is needed.
 
 ## What's in the repo
@@ -19,7 +20,7 @@ so no API key is needed.
 |---|---|
 | `backend/` | Python API (FastAPI + LangGraph), agents, Citation Firewall, `stare` command-line tool, tests |
 | `frontend/` | React web app (Vite) |
-| `data/` | Seed court opinions, statutes, and sample complaints in `data/samples/` (all fictional) |
+| `data/` | Case law (`seed/` + `expansion/`), statutes, and sample complaints in `data/samples/` (all fictional) |
 | `docs/` | Design, traceability, evaluation results |
 | `reports/` | Milestone reports and presentations, demo video, validation kit |
 
@@ -32,8 +33,8 @@ cd backend
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e '.[presidio,llm,dev]'
 .venv/bin/python -m spacy download en_core_web_sm
-.venv/bin/stare ingest all --offline    # build the case-law corpus (no internet needed)
-.venv/bin/stare index build             # build the search index (~6 s)
+.venv/bin/stare ingest all --offline    # build the case-law corpus (no internet needed, ~5 min)
+.venv/bin/stare index build             # build the search index (~2 min)
 .venv/bin/stare db seed-users           # create the demo accounts
 ```
 
