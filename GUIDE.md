@@ -31,10 +31,10 @@ You need Python 3.12 with [`uv`](https://docs.astral.sh/uv/), Node 20+, and Tess
 ```bash
 cd backend
 uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python -e '.[presidio,llm,dev]'
+uv pip install --python .venv/bin/python -e '.[presidio,llm,dev,neural]'
 .venv/bin/python -m spacy download en_core_web_sm
 .venv/bin/stare ingest all --offline    # build the case-law corpus (no internet needed, ~5 min)
-.venv/bin/stare index build             # build the search index (~2 min)
+.venv/bin/stare index build             # build the search index (~35 min with bge-small on the GPU; STARE_EMBEDDER=lsa ~2 min)
 .venv/bin/stare db seed-users           # create the demo accounts
 ```
 
@@ -90,6 +90,21 @@ cd backend && .venv/bin/stare eval run  # full evaluation -> docs/evaluation/res
 ```
 
 GitHub Actions runs the tests and the build on every push.
+
+## The trained model (STARE-Gen, optional)
+
+STARE-Gen is a small model trained in this project to state a rule from a court's passage
+([data/gen/README.md](data/gen/README.md)). To train it and switch it on:
+
+```bash
+cd backend
+uv pip install --python .venv/bin/python -e '.[gen]'
+.venv/bin/stare gen data && .venv/bin/stare gen train && .venv/bin/stare gen eval
+echo "STARE_MEMO_WRITER=stare_gen" >> .env
+```
+
+Its sentences appear in the memo as "Summary (STARE-Gen)" before the verified quotation. Every memo also shows a
+confidence score (High, Medium, Low or Very low) next to its title.
 
 ## Optional settings
 

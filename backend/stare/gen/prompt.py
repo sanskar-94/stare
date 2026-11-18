@@ -11,10 +11,7 @@ SYSTEM = (
 MAX_SOURCE_WORDS = 140
 
 _WORD = re.compile(r"[a-z][a-z'-]{2,}")
-STOP = set("""the and for that this with from are was were has have had not but its their them they which who whom
-whose shall may must can could would should will been being than then there these those such any all each into
-upon under over also only other more most some what when where while because about between after before during
-court courts case cases held hold holds holding see id at its it's our we his her him she he you your one two""".split())
+STOP = {"the", "and", "for", "that", "this", "with", "from", "are", "was", "were", "has", "have", "had", "not", "but", "its", "their", "them", "they", "which", "who", "whom", "whose", "shall", "may", "must", "can", "could", "would", "should", "will", "been", "being", "than", "then", "there", "these", "those", "such", "any", "all", "each", "into", "upon", "under", "over", "also", "only", "other", "more", "most", "some", "what", "when", "where", "while", "because", "about", "between", "after", "before", "during", "court", "courts", "case", "cases", "held", "hold", "holds", "holding", "see", "id", "at", "it's", "our", "we", "his", "her", "him", "she", "he", "you", "your", "one", "two"}
 
 
 def content_words(text: str) -> set[str]:

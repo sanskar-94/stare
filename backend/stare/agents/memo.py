@@ -196,11 +196,12 @@ class MemoAgent(BaseAgent):
         if writer is None or not source:
             return ""
         sentence = writer.write(source, a.case_name)
-        if not acceptable(sentence, source):
+        if not acceptable(sentence, source, min_support=0.7):
             self.gen_rejected += 1
             return ""
         self.gen_used += 1
-        return sentence
+        # labelled, and followed by the verified quotation, so the court's own words always carry the rule
+        return f"Summary (STARE-Gen): {sentence.replace(chr(34), '')}"
 
     @staticmethod
     def _closest_allegation(element: str, text: str) -> str:

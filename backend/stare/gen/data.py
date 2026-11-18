@@ -31,7 +31,7 @@ GEN_DIR = REPO_DIR / "data" / "gen"
 _SIGNAL_CASE = re.compile(r"^(?:See|see|See also|See, e\.g\.,|Cf\.|Accord|E\.g\.,|See generally)?\s*[^;]{0,140}?\bv\.\s[^;]{1,120}$")
 _REPORTER = re.compile(r"\b\d{1,4}\s+(?:U\.\s?S\.|S\.\s?Ct\.|L\.\s?Ed|F\.\s?\d?d?|F\.\s?Supp|F\.\s?App)")
 _BAD = re.compile(r"\b(?:we|our|us|here|appellants?|appellees?|petitioners?|respondents?|the district court|"
-                  r"this case|the jury|the panel|Id\.|supra|infra|footnote)\b|\bI\b", re.I)
+                  r"this case|the jury|the panel|Id\.|supra|infra|footnote)\b|\bI\b", re.IGNORECASE)
 _OPENER = re.compile(r"^(?:Thus|Accordingly|Therefore|Moreover|Indeed|Further(?:more)?|In short|In other words|"
                      r"First|Second|Third|Finally|Instead|Rather|Nevertheless|However|Similarly|Likewise),\s+")
 _HEADING = re.compile(r"^(?:[A-Z][\w'-]*\s){1,5}(?:To|A|An|The|In|Under|Because|Although|When|If|Where)\s")
@@ -132,8 +132,8 @@ def build(session: Session, out_dir: Path | None = None, *, min_support: float =
         h = zlib.crc32(str(ex["cited_id"]).encode()) % 20
         split["test" if h == 0 else "dev" if h == 1 else "train"].append(ex)
     rng = random.Random(seed)
-    for k in split:
-        rng.shuffle(split[k])
+    for rows in split.values():
+        rng.shuffle(rows)
     split["train"] = split["train"][:max_train]
     split["dev"] = split["dev"][:300]
     split["test"] = split["test"][:200]

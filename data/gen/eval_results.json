@@ -1,0 +1,100 @@
+{
+  "test_examples": 200,
+  "reference": {
+    "examples": 200,
+    "rouge_l_f1": 1.0,
+    "grounding_pass_rate": 0.645,
+    "mean_support": 0.6854,
+    "mean_words": 25.5
+  },
+  "base": {
+    "examples": 200,
+    "rouge_l_f1": 0.1486,
+    "grounding_pass_rate": 0.14,
+    "mean_support": 0.3589,
+    "mean_words": 31.4,
+    "seconds_per_sentence": 0.91
+  },
+  "stare_gen": {
+    "examples": 200,
+    "rouge_l_f1": 0.1753,
+    "grounding_pass_rate": 0.29,
+    "mean_support": 0.4514,
+    "mean_words": 20.8,
+    "seconds_per_sentence": 0.34
+  },
+  "samples": [
+    {
+      "case": "Lytle v. Household Manufacturing, Inc.",
+      "reference": "In making this determination, the court must draw all reasonable inferences in favor of the nonmoving party without making credibility assessments or weighing the evidence.",
+      "base": "The rule states that when evaluating evidence presented by a defendant in a lawsuit against a plaintiff, the court should consider both the credibility of the evidence and the likelihood of its being true.",
+      "stare_gen": "The evidence of the nonmovant is to be believed, and all justifiable inferences are to be drawn in his favor."
+    },
+    {
+      "case": "Ferguson v. City of Phoenix",
+      "reference": "One could therefore contend that intent should not be required for Title II violations, even if it is required for Rehabilitation Act violations.",
+      "base": "In this memo, the rule states that the remedy for violating the ADA and the Rehabilitation Act requires the same understanding of the two laws as those who seek damages under Title VI.",
+      "stare_gen": "In order to establish a nexus between the ADA and the Rehabilitation Act, the plaintiff must show that the ADA and the Rehabilitation Act both address the same issue: the violation of the ADA."
+    },
+    {
+      "case": "Lipsett v. University of Puerto Rico",
+      "reference": "By its terms, Title IX prohibits discrimination only by a “program or activity” receiving federal funding.",
+      "base": "The rule is that no person in the United States shall, on the basis of sex, be excluded from participation in, or have any influence over, the administration of justice under Title IX.",
+      "stare_gen": "Title IX prohibits discrimination based on sex in employment."
+    },
+    {
+      "case": "Board of Trustees of Keene State College v. Sweeney",
+      "reference": "Such a prima facie showing is rebutted if the employer shows a legitimate non-discriminatory reason for the employee’s discharge.",
+      "base": "The rule states that the plaintiff must demonstrate \"absence of discriminatory motive\" before the defendant can invoke the doctrine of prima facie showing under McDonnell Douglas.",
+      "stare_gen": "The plaintiff must demonstrate that the defendant's reasons were not pretextual and that they were genuine."
+    },
+    {
+      "case": "Board of Trustees of Keene State College v. Sweeney",
+      "reference": "Nulf was required to present a prima facie case of discriminatory discharge and to prove that any legitimate, nondiscriminatory reason articulated for the discharge was merely a pretext for discrimination.",
+      "base": "The rule states that the plaintiff must demonstrate that the defendant's statement \"was articulat[ed]\" by the court, rather than simply stating a reason for their rejection.",
+      "stare_gen": "The plaintiff must demonstrate that the defendant’s statement of reasons was an act of discrimination."
+    },
+    {
+      "case": "Foster v. Arthur Andersen, LLP",
+      "reference": "Id.. An employee cannot state a cause of action for disability discrimination when her employer terminated her for reasons unrelated to a disability.",
+      "base": "The rule states that an employee can not state a cause of action for disability discrimination when their employer fails to accommodate their disability by failing to provide reasonable accommodations.",
+      "stare_gen": "The plaintiff must show that the employer’s actions were discriminatory and that the employer failed to provide reasonable accommodations for the employee’s disability."
+    },
+    {
+      "case": "Jones v. Unisys Corp.",
+      "reference": "Standard for summary judgment When considering a motion for summary judgment, the court must examine all the evidence in the light most favorable to the non-moving party.",
+      "base": "The rule in this case is that the district court should not consider the \"moving party's\" claim for summary judgment without first evaluating the relevant evidence and considering the applicable rules of law.",
+      "stare_gen": "Summary judgment is appropriate when there is no genuine issue as to any material fact and the moving party is entitled to a judgment as a matter of law."
+    },
+    {
+      "case": "Slatin v. Stanford Research Institute",
+      "reference": "Other courts, however, have held that the apparently broad language of § 626(b) is limited to relief related to the pecuniary damages specifically provided for under ADEA and FLSA.",
+      "base": "According to the source passage, the rule states that the source must support the interpretation of the Administrative Procedure Act's provisions on the basis of Congressional intent.",
+      "stare_gen": "Congress has expressly authorized the Administrator to award compensatory damages under the ADEA."
+    },
+    {
+      "case": "Beck v. University of Wisconsin Board of Regents",
+      "reference": "The right to reasonable accommodation belongs both to the employee and to the employer, who must be given the opportunity to accommodate.",
+      "base": "The Rule: \"Except for the provision of reasonable accommodations under Section 12112, the University's policy and procedures do not provide reasonable accommodations for employees with disabilities.\"",
+      "stare_gen": "The University failed to provide reasonable accommodations for Beck because she was unable to make reasonable accommodations due to her disability."
+    },
+    {
+      "case": "Smalley v. Eatonville",
+      "reference": "Ticipated in a Title VII proceeding; (2) she was disadvantaged by an action of her employer subsequent to or contemporaneously with such opposition or participation; and (3) there is a causal connection between the protected activity and the adverse employment action.",
+      "base": "The rule states that if a court finds that Smalley's actions were \"not necessary\" to the decision, the failure to demonstrate a causal link between the protected expression and the adverse action does not constitute a prima facie case.",
+      "stare_gen": "A finding of prejudice may be made even if the defendant has shown no actual cause of the adverse employment action."
+    },
+    {
+      "case": "Wrighten v. Metropolitan Hospitals, Inc.",
+      "reference": "Criminatory retaliation, a plaintiff must show that: (1) she engaged in an activity protected under Title VII; (2) her employer subjected her to adverse employment action; (3) there was a causal link between the protected activity and the employer’s action.",
+      "base": "The rule states that if an employer discriminates against a person because they oppose a prohibited practice, such as harassment or discrimination based on race, gender, religion, disability, or sexual orientation, the employer must provide evidence of a direct, nonretaliation relationship between the employer's actions and the alleged protected activity.",
+      "stare_gen": "If the plaintiff makes a prima facie case, the burden of production shifts to the defendant employer to articulate some legitimate, nonretaliation reason for the adverse action."
+    },
+    {
+      "case": "United States v. Chesapeake & Ohio Railway Co.",
+      "reference": "The Act does not require a remedy for those not discriminated against.",
+      "base": "This rule states that the United States Department of Justice must determine whether a given employment practice violates Title VII of the Civil Rights Act of 1964, which prohibits employers from discriminating against employees based on race, color, religion, sex, or national origin.",
+      "stare_gen": "Title VII does not require the companies to forego the benefits afforded management and employees by nondiscriminatory craft, department, and seniority systems."
+    }
+  ]
+}

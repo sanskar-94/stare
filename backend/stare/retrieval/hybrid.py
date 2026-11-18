@@ -1,8 +1,9 @@
-"""Hybrid retrieval: BM25 + dense (LSA by default) -> RRF -> rerank, with RAG-Fusion and authority grouping."""
+"""Hybrid retrieval: BM25 + dense (bge-small by default) -> RRF -> rerank, with RAG-Fusion and authority grouping."""
 
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Callable, Collection
 
 import numpy as np
@@ -12,12 +13,13 @@ from sqlalchemy.orm import Session
 from stare.config import Settings, get_settings
 from stare.db.models import Chunk, CourtRow, Opinion, StatuteSection
 from stare.retrieval.bm25 import BM25Index, top_k
-from stare.retrieval.embed import Embedder, get_embedder, load_embedder
+from stare.retrieval.embed import Embedder, effective_embedder, get_embedder, load_embedder
 from stare.retrieval.rerank import Reranker, get_reranker
 from stare.retrieval.rrf import rrf
 from stare.schemas import Authority, RetrievedChunk
 
 BATCH = 512
+log = logging.getLogger(__name__)
 EMBEDDER_FILE = "embedder.joblib"
 DENSE_FILE, DENSE_IDS_FILE, META_FILE = "dense.npy", "dense_ids.npy", "index_meta.json"
 
@@ -63,6 +65,8 @@ class HybridRetriever:
             dense[i : i + BATCH] = vecs
             session.execute(update(Chunk), [{"id": cid, "embedding": v} for cid, v in zip(ids[i : i + BATCH], vecs)])
             session.commit()
+            if (i // BATCH) % 20 == 0:
+                log.info("embedded %d/%d chunks", min(i + BATCH, len(ids)), len(ids))
 
         bm25 = BM25Index()
         bm25.build(ids, texts)
@@ -71,7 +75,7 @@ class HybridRetriever:
         np.save(out / DENSE_FILE, dense)
         np.save(out / DENSE_IDS_FILE, np.asarray(ids, dtype=np.int64))
         (out / META_FILE).write_text(
-            json.dumps({"n_chunks": len(ids), "embedder": settings.embedder, "dim": embedder.dim})
+            json.dumps({"n_chunks": len(ids), "embedder": effective_embedder(settings), "dim": embedder.dim})
         )
         return {"chunks": len(ids), "terms": len(bm25.vocab), "dim": embedder.dim}
 
@@ -96,7 +100,7 @@ class HybridRetriever:
                 "Run `stare index build` to rebuild it."
             )
         self._bm25 = BM25Index.load(d)
-        self._embedder = load_embedder(self.settings, d / EMBEDDER_FILE)
+        self._embedder = load_embedder(self.settings, d / EMBEDDER_FILE, meta.get("embedder"))
         self._matrix = np.load(d / DENSE_FILE, mmap_mode="r")
         self._dense_ids = np.load(d / DENSE_IDS_FILE)
         self._loaded_mtime = mtime

@@ -43,6 +43,14 @@ complaint PDF ─▶ Intake (PyMuPDF + Tesseract OCR, PII redaction) ─▶ case
   never quotes them as the court's holding, and Gate 3 warns when a quotation appears only in a dissent.
 * **Human in the loop.** LangGraph interrupts at the plan gate and the memo gate. The workspace shows a
   live agent trace, and an audit log records every run, approval and export.
+* **STARE-Gen, a model trained in this project.** SmolLM2-135M fine-tuned on 3,838 rule sentences that courts
+  wrote when citing earlier cases (mined from the corpus's own citation network). It can add a labelled one-sentence
+  summary before each verified quotation; it is off by default and every sentence must pass a grounding check
+  ([data/gen/README.md](data/gen/README.md)).
+* **Confidence score.** Every memo is scored on verification, binding authority, coverage of the plan and
+  retrieval relevance (High / Medium / Low / Very low), in the app and in the Word export.
+* **Query-type routing.** A question that names a case, a reporter citation or a statute section gets an
+  exact-match lookup, and what it names is ranked first.
 * **Privacy.** Personal details are redacted (Presidio + regex) before any agent runs. Only redacted
   text is stored. A guard refuses to send any prompt that still contains an SSN, email or phone number.
 
@@ -52,7 +60,7 @@ STARE runs fully offline at $0 on an 8 GB laptop. The defaults are:
 
 * a deterministic LLM mode
 * SQLite
-* LSA embeddings
+* bge-small embeddings (on the Apple GPU or CUDA via sentence-transformers; LSA as the fallback)
 * a lexical reranker
 * a corpus of 5,120 real federal employment-discrimination opinions (151 hand-picked leading cases plus
   4,969 found by following their citations), cached in the repository so it builds offline
@@ -69,11 +77,12 @@ Requirements: Python 3.12 (`uv` recommended), Node 20+, Tesseract (`brew install
 # backend
 cd backend
 uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python -e '.[presidio,llm,dev]'   # llm: provider SDKs, needed by the LLM-mode tests
+uv pip install --python .venv/bin/python -e '.[presidio,llm,dev,neural]'   # neural: bge-small embeddings; llm: provider SDKs for the LLM-mode tests
+# optional, to train or use STARE-Gen: add the 'gen' extra (PyTorch + Transformers)
 .venv/bin/python -m spacy download en_core_web_sm
 
 .venv/bin/stare ingest all --offline   # courts, 5,120 opinions, statutes, chunks (from data/seed + data/expansion, no network)
-.venv/bin/stare index build            # BM25 + LSA dense index (≈2 min for 104k chunks)
+.venv/bin/stare index build            # BM25 + bge-small dense index (≈35 min on an M1 GPU for 104k chunks; STARE_EMBEDDER=lsa: ≈2 min)
 .venv/bin/stare db seed-users          # attorney@ / paralegal@ / admin@stare.local, password: stare-demo
 .venv/bin/stare serve                  # http://127.0.0.1:8000  (OpenAPI docs at /docs)
 
@@ -106,6 +115,7 @@ All parties and personal details in them are fictional.
 | `stare serve` | API server |
 | `stare eval run [--limit N]` | Gold set + Mata + export check + redaction + latency → `docs/evaluation/results.md` |
 | `stare eval mata` | Mata v. Avianca fixture only |
+| `stare gen data` / `gen train` / `gen eval` | Build the STARE-Gen training pairs, fine-tune the model (about 45 min on an 8 GB M2), compare it with the base model |
 | `stare eval baseline --answers FILE` | Score a general-purpose LLM's answers (JSONL `{id, answer}`) with the Firewall; without `--answers` it calls `STARE_LLM_PROVIDER` (costs API credits) |
 
 ## Tests
@@ -134,7 +144,8 @@ can go in `backend/.env`. Private keys go in `backend/.env.local`, which is git-
 | `STARE_LLM_MODEL` / `STARE_LLM_FAST_MODEL` | `claude-opus-5-5` / `claude-haiku-5-5` | main drafting model / routine-step model |
 | `STARE_LLM_BASE_URL` | | e.g. `http://localhost:11434/v1` for Ollama |
 | `STARE_DATABASE_URL` | SQLite in `data/` | `postgresql+psycopg://…` for PostgreSQL + pgvector (`docker compose up db`) |
-| `STARE_EMBEDDER` | `lsa` | `fastembed`, `sentence_transformers` (then set `STARE_EMBEDDING_DIM`) |
+| `STARE_EMBEDDER` | `sentence_transformers` (bge-small, 384 dims, Apple GPU/CUDA when present) | `fastembed` (same model, ONNX on the CPU), `lsa` (used automatically when the `neural` extra is not installed) |
+| `STARE_MEMO_WRITER` | `extractive` | `stare_gen` adds STARE-Gen's labelled rule summaries (needs `models/stare-gen`, see `stare gen train`) |
 | `STARE_RERANKER` | `lexical` | `cross_encoder` |
 | `STARE_COURTLISTENER_TOKEN` | | free CourtListener token; enables the citation-lookup API fallback |
 | `STARE_JWT_SECRET` | dev value | **set in any shared deployment** |

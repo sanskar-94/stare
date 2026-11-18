@@ -86,8 +86,10 @@ def test_lsa_embedder_shape_norm_and_roundtrip(tmp_path):
     assert not e.embed(["qqqqq"]).any()  # out-of-vocabulary query -> zero vector
 
 
-def test_factories_default_lightweight():
-    s = Settings()
+def test_factories_defaults(monkeypatch):
+    monkeypatch.delenv("STARE_EMBEDDER", raising=False)
+    assert Settings().embedder == "sentence_transformers"  # bge-small; LSA when the neural extra is missing
+    s = Settings(embedder="lsa")
     assert isinstance(get_embedder(s), LSAEmbedder)
     assert isinstance(get_reranker(s), LexicalReranker)
     assert isinstance(get_reranker(Settings(reranker="none")), NoReranker)

@@ -1,32 +1,80 @@
 {
   "base_model": "HuggingFaceTB/SmolLM2-135M-Instruct",
   "device": "mps",
-  "examples": 32,
-  "accum": 8,
+  "examples": 3838,
+  "accum": 16,
   "lr": 0.0001,
   "max_len": 384,
-  "updates_planned": 4,
+  "updates_planned": 239,
   "checks": [
     {
       "update": 0,
-      "dev_loss": 2.6357,
+      "dev_loss": 2.8543,
       "minutes": 0.0
     },
     {
-      "update": 2,
-      "train_loss": 2.858,
-      "dev_loss": 2.4437,
-      "minutes": 0.2
+      "update": 25,
+      "train_loss": 2.4979,
+      "dev_loss": 2.5316,
+      "minutes": 4.5
     },
     {
-      "update": 4,
-      "train_loss": 2.584,
-      "dev_loss": 2.4126,
-      "minutes": 0.4
+      "update": 50,
+      "train_loss": 2.404,
+      "dev_loss": 2.4831,
+      "minutes": 12.1
+    },
+    {
+      "update": 75,
+      "train_loss": 2.3508,
+      "dev_loss": 2.4584,
+      "minutes": 17.1
+    },
+    {
+      "update": 100,
+      "train_loss": 2.3517,
+      "dev_loss": 2.4392,
+      "minutes": 21.6
+    },
+    {
+      "update": 125,
+      "train_loss": 2.3325,
+      "dev_loss": 2.4265,
+      "minutes": 26.3
+    },
+    {
+      "update": 150,
+      "train_loss": 2.6184,
+      "dev_loss": 2.4166,
+      "minutes": 30.3
+    },
+    {
+      "update": 175,
+      "train_loss": 2.4499,
+      "dev_loss": 2.4113,
+      "minutes": 34.5
+    },
+    {
+      "update": 200,
+      "train_loss": 2.1115,
+      "dev_loss": 2.4078,
+      "minutes": 38.3
+    },
+    {
+      "update": 225,
+      "train_loss": 2.4071,
+      "dev_loss": 2.4071,
+      "minutes": 41.9
+    },
+    {
+      "update": 239,
+      "train_loss": 2.1679,
+      "dev_loss": 2.4071,
+      "minutes": 44.1
     }
   ],
-  "best_update": 4,
+  "best_update": 239,
   "stopped": "completed",
-  "best_dev_loss": 2.4126,
-  "minutes": 0.4
+  "best_dev_loss": 2.4071,
+  "minutes": 44.2
 }

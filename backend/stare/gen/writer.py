@@ -16,7 +16,7 @@ from pathlib import Path
 from stare.gen.prompt import messages
 
 log = logging.getLogger(__name__)
-_FIRST_SENTENCE = re.compile(r"^(.+?[.!?])(?:\s+[A-Z(\"“]|$)", re.S)
+_FIRST_SENTENCE = re.compile(r"^(.+?[.!?])(?:\s+[A-Z(\"“]|$)", re.DOTALL)
 
 
 class StareGen:
@@ -48,7 +48,7 @@ class StareGen:
 def _load(path: str) -> StareGen | None:
     try:
         return StareGen(Path(path))
-    except Exception as exc:  # missing weights or no PyTorch: the memo is drafted extractively
+    except Exception as exc:  # noqa: BLE001 - missing weights or no PyTorch: the memo is drafted extractively
         log.warning("STARE-Gen not available (%s); using the extractive memo writer", exc)
         return None
 

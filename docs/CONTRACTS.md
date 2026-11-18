@@ -81,7 +81,7 @@ class Embedder(Protocol):                       # embed.py
     def fit(self, texts: list[str]) -> None     # LSA needs fitting; neural embedders no-op
     def embed(self, texts: list[str]) -> np.ndarray   # (n, dim) float32, L2-normalised
     def save(self, path: Path) -> None; @classmethod load(cls, path) -> "Embedder"
-def get_embedder(settings) -> Embedder          # "lsa" (TF-IDF + TruncatedSVD, default), "fastembed", "sentence_transformers"
+def get_embedder(settings) -> Embedder          # "sentence_transformers" (bge-small, default), "fastembed", "lsa" (fallback)
 
 class BM25Index:                                # bm25.py — own Okapi BM25 (k1=1.5, b=0.75), legal-aware tokenizer
     def build(self, ids: list[int], texts: list[str]) -> None

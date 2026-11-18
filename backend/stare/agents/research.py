@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from stare.agents.base import AgentResult, BaseAgent
+from stare.agents.routing import Route, classify, resolve
 from stare.agents.state import ResearchState, dump, load_case_record, load_plan
 from stare.intake.elements import PROCEDURAL, STATUTE_LABEL, THEORIES
 from stare.llm.base import LLMError
@@ -187,6 +188,20 @@ class ResearchAgent(BaseAgent):
                 found += r.authorities_from_chunks(bound, limit=max(4, limit // 2))
         return found + self.cocited(queries, found, k)
 
+    def exact_matches(self, route: Route, queries: list[str], k: int) -> list[Authority]:
+        """Exact-match lookup of the opinions and sections the question names, with their best passages."""
+        with self.deps.session_factory() as s:
+            ops, secs = resolve(s, route)
+            pinned = [Authority(key=f"sec:{sec.id}", kind="regulation" if sec.code == "CFR" else "statute",
+                                citation=sec.citation, url=sec.url, section_id=sec.id, relevance=1.0)
+                      for sec in s.scalars(select(StatuteSection).where(StatuteSection.id.in_(secs)))] if secs else []
+        found = []
+        if ops:
+            chunks = self.deps.retriever.search_many(queries, k=k, opinion_ids=ops)
+            found = [a for a in self.deps.retriever.authorities_from_chunks(chunks, limit=len(ops))
+                     if a.opinion_id in ops]
+        return found + pinned
+
     def execute(self, state: ResearchState) -> AgentResult:
         plan = load_plan(state)
         try:
@@ -236,14 +251,29 @@ class ResearchAgent(BaseAgent):
                         "proposition": item.issue if item else plan.question,
                     })
 
+        # Query-type routing: authorities the question names (a case, a citation, a statute section) are looked up
+        # exactly and ranked first.
+        route = classify(" ".join(direct))
+        named = self.exact_matches(route, direct, k) if (route.kind != "conceptual" and checked) else []
+        for a in named:
+            item = best_item(a, checked) if a.kind == "case" else None
+            prev = by_key.get(a.key)
+            by_key[a.key] = (prev or a).model_copy(update={
+                "relevance": 1.0,
+                "plan_item_id": (prev.plan_item_id if prev else None) or (item.id if item else checked[0].id),
+                "proposition": (prev.proposition if prev else None) or plan.question,
+            })
+
         candidates = sorted(by_key.values(), key=lambda a: a.relevance, reverse=True)[: settings.max_candidates]
         cases = sum(a.kind == "case" for a in candidates)
         summary = (
             f"Hybrid search: {len(candidates)} candidates ({cases} cases, {len(candidates) - cases} statutes/regulations) "
             f"from {n_queries} queries (BM25 + dense, RRF)"
+            + (f"; {route.kind} question, {len(named)} named authorities found exactly" if named else "")
         )
         return AgentResult(
             update={"candidates": dump(candidates), "status": "researching"},
             summary=summary,
-            data={"candidates": len(candidates), "queries": n_queries, "loop": loop},
+            data={"candidates": len(candidates), "queries": n_queries, "loop": loop, "query_type": route.kind,
+                  "named": len(named)},
         )

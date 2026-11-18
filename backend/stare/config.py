@@ -38,14 +38,16 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_max_tokens: int = 8000
     llm_cache: bool = True  # cache identical prompts on disk to control cost
-    # STARE-Gen, the rule-sentence writer trained in this project (stare gen train). "auto" uses it when the
-    # model folder and PyTorch are present, otherwise the memo is drafted extractively.
-    memo_writer: Literal["auto", "extractive", "stare_gen"] = "auto"
+    # STARE-Gen, the rule-sentence writer trained in this project (stare gen train). Off by default: on held-out
+    # passages it doubles the base model's grounded output but still misstates some rules (data/gen/README.md).
+    # "stare_gen" (or "auto" with the model folder present) adds a labelled summary before each verified quotation.
+    memo_writer: Literal["auto", "extractive", "stare_gen"] = "extractive"
     gen_model_dir: Path = REPO_DIR / "models" / "stare-gen"
 
     # --- retrieval -----------------------------------------------------------------------------
-    embedder: Literal["lsa", "fastembed", "sentence_transformers"] = "lsa"
-    embedding_dim: int = 256  # LSA dimension; neural embedders override with their own size
+    # bge-small (384 dimensions) via sentence-transformers by default; LSA when the `neural` extra is missing.
+    embedder: Literal["lsa", "fastembed", "sentence_transformers"] = "sentence_transformers"
+    embedding_dim: int = 384  # bge-small's size; LSA pads its components to this width
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     reranker: Literal["lexical", "cross_encoder", "none"] = "lexical"
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"

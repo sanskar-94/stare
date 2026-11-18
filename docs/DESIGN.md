@@ -124,7 +124,7 @@ Embeddings are a pgvector `vector(dim)` on PostgreSQL and a float32 BLOB on SQLi
   is prefixed with its citation and heading.
 * **BM25.** Okapi BM25 (k1 = 1.5, b = 0.75) over a legal tokenizer that turns reporter cites into
   `cite:` tokens and section symbols into `sec:` prefix tokens.
-* **Dense.** LSA (TF-IDF + truncated SVD) by default, or fastembed / sentence-transformers.
+* **Dense.** bge-small (384 dimensions, sentence-transformers on the GPU) by default; fastembed (ONNX) or LSA (TF-IDF + truncated SVD, no download) as alternatives.
 * **Fusion.** Reciprocal Rank Fusion (k = 60) of BM25 and dense, and again across the queries of one
   plan item (RAG-Fusion).
 * **Rerank.** A lexical feature reranker by default, or a cross-encoder.
