@@ -50,7 +50,8 @@ complaint PDF ─▶ Intake (PyMuPDF + Tesseract OCR, PII redaction) ─▶ case
 * **Confidence score.** Every memo is scored on verification, binding authority, coverage of the plan and
   retrieval relevance (High / Medium / Low / Very low), in the app and in the Word export.
 * **Query-type routing.** A question that names a case, a reporter citation or a statute section gets an
-  exact-match lookup, and what it names is ranked first.
+  exact-match lookup, and what it names is ranked first (on 40 questions naming leading cases: found 40 times,
+  against 5 for text search alone).
 * **Privacy.** Personal details are redacted (Presidio + regex) before any agent runs. Only redacted
   text is stored. A guard refuses to send any prompt that still contains an SSN, email or phone number.
 
@@ -174,7 +175,9 @@ docs/            contracts, design document, traceability, evaluation results
 * [docs/DESIGN.md](docs/DESIGN.md): the design document (architecture, data model, workflow, API)
 * [docs/CONTRACTS.md](docs/CONTRACTS.md): module interfaces and the HTTP API
 * [docs/TRACEABILITY.md](docs/TRACEABILITY.md): proposal requirements mapped to code and tests
-* [docs/evaluation/results.md](docs/evaluation/results.md): evaluation results (Table 29 metrics)
+* [docs/evaluation/results.md](docs/evaluation/results.md): evaluation results (Table 29 metrics) on the 5,120-opinion corpus with bge-small
+  (recall@10 0.79, all citation guarantees met); the same run with LSA is in `results_expanded_lsa.md`, the
+  151-opinion seed run in `results_seed_corpus.md`, the named-authority routing check in `routing_named_authorities.json`
 * [docs/evaluation/support_review.md](docs/evaluation/support_review.md): review of whether cited authorities support their propositions (criteria 3–4)
 * [DECISIONS.md](DECISIONS.md): implementation decisions and how to switch to the heavier options
 

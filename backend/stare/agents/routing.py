@@ -16,9 +16,10 @@ from sqlalchemy.orm import Session
 
 from stare.db.models import Citation, CitationEdge, Opinion, StatuteSection
 
-_CASE_NAME = re.compile(r"\b([A-Z][\w.&'’-]*(?:\s+(?:of|the|&|[A-Z][\w.&'’-]*)){0,7})\s+v\.\s+"
-                        r"([A-Z][\w.&'’-]*(?:\s+(?:of|the|&|[A-Z][\w.&'’-]*)){0,5})")
+_CASE_NAME = re.compile(r"\b([A-Z][\w.,&'’-]*(?:\s+(?:of|the|&|[A-Z][\w.,&'’-]*)){0,7})\s+v\.\s+"
+                        r"([A-Z][\w.,&'’-]*(?:\s+(?:of|the|&|[A-Z][\w.,&'’-]*)){0,5})")  # "Burlington Industries, Inc. v. Ellerth"
 _SECTION = re.compile(r"(?:§+|\bsection\s+|\bsec\.\s+)\s*(\d+[a-z]?(?:-\d+[a-z]?)?(?:\.\d+)?)", re.IGNORECASE)
+_LEAD = re.compile(r"^(?:(?:See|Cf\.|Accord|But|Also|In|Under|Following|Applying|Apply|Does|Did|Do|What|How|Is|Was|Why|When|Can)\s+)+")
 _SKIP = {"inc", "co", "corp", "llc", "ltd", "the", "of", "and", "&", "company", "corporation", "united", "states"}
 
 
@@ -36,7 +37,8 @@ def classify(text: str) -> Route:
         g = getattr(c, "groups", None) or {}
         if g.get("volume") and g.get("reporter") and g.get("page"):
             r.cites.append((g["volume"], c.corrected_reporter(), g["page"]))
-    r.case_names = [(a.strip(), b.strip()) for a, b in _CASE_NAME.findall(text or "")]
+    r.case_names = [(_LEAD.sub("", a.strip(" ,")) or a.strip(" ,"), b.strip(" ,"))
+                    for a, b in _CASE_NAME.findall(text or "")]
     r.sections = list(dict.fromkeys(_SECTION.findall(text or "")))
     case = bool(r.cites or r.case_names)
     r.kind = "mixed" if case and r.sections else "case" if case else "statute" if r.sections else "conceptual"
@@ -59,6 +61,8 @@ def resolve(session: Session, route: Route) -> tuple[list[int], list[int]]:
             ops.append(oid)
     for a, b in route.case_names:
         ka, kb = _key_word(a), _key_word(b)
+        if not ka:
+            ka, kb = kb, None
         if not ka:
             continue
         q = select(Opinion.id).where(Opinion.case_name.ilike(f"%{ka}%"))

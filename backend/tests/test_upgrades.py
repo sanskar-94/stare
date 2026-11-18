@@ -64,3 +64,9 @@ def test_training_pairs_come_from_the_citing_courts_sentence():
 
 def test_extractive_writer_when_disabled(settings):
     assert settings.memo_writer == "extractive" and get_writer(settings) is None
+
+
+def test_case_names_with_commas():
+    r = classify("What did Burlington Industries, Inc. v. Ellerth hold?")
+    assert r.case_names == [("Burlington Industries, Inc.", "Ellerth")]
+    assert classify("See Smith v. Jones, 548 U.S. 53.").case_names == [("Smith", "Jones")]

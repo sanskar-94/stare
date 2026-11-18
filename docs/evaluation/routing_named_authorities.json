@@ -1,0 +1,248 @@
+{
+ "questions": 40,
+ "hybrid_top10": 5,
+ "routing_exact": 40,
+ "either": 40,
+ "rows": [
+  {
+   "q": "What did McDonnell Douglas Corp. v. Green hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 450 U.S. 248 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did International Brotherhood of Teamsters v. United States hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 401 U.S. 424 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did St. Mary's Honor Center v. Hicks hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 477 U.S. 57 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Albemarle Paper Co. v. Moody hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 460 U.S. 711 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Price Waterhouse v. Hopkins hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": true,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 438 U.S. 567 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Harris v. Forklift Systems, Inc. hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": true,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 530 U.S. 133 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Faragher v. City of Boca Raton hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": true,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 415 U.S. 36 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Burlington Industries, Inc. v. Ellerth hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 470 U.S. 564 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Pullman-Standard v. Swint hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 424 U.S. 747 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Trans World Airlines, Inc. v. Thurston hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 433 U.S. 321 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did United Air Lines, Inc. v. Evans hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 421 U.S. 454 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Hazelwood School District v. United States hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": true,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 491 U.S. 164 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Zipes v. Trans World Airlines, Inc. hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 600 F.2d 1003 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Oncale v. Sundowner Offshore Services, Inc. hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 682 F.2d 897 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did McDonald v. Santa Fe Trail Transportation Co. hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 426 U.S. 229 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Hazen Paper Co. v. Biggins hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 429 U.S. 125 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Rowe v. General Motors Corp. hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 449 U.S. 250 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Sanchez v. Standard Brands, Inc. hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": true,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 434 U.S. 575 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Love v. Pullman Co. hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 444 F.2d 791 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "What did Wards Cove Packing Co. v. Atonio hold, and does it help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  },
+  {
+   "q": "Does 511 U.S. 244 help our client's discrimination claim?",
+   "hybrid_top10": false,
+   "routing": true,
+   "route": "case"
+  }
+ ]
+}
