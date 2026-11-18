@@ -1,0 +1,10 @@
+{
+  "edges_with_context": 68066,
+  "rule_sentences": 10168,
+  "examples_kept": 4937,
+  "min_support": 0.5,
+  "train_examples": 4500,
+  "dev_examples": 217,
+  "test_examples": 200,
+  "cited_opinions": 2144
+}

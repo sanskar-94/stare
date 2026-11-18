@@ -85,6 +85,11 @@ class MemoExporter:
             ("Run", str(meta.get("run_id") or "")),
             ("Exported", datetime.now(UTC).strftime("%d %B %Y %H:%M UTC")),
             ("Drafted with", memo.generated_by),
+            ("Confidence", (f"{memo.confidence.level} ({memo.confidence.score:.2f}): verification "
+                            f"{memo.confidence.components.get('verification', 0):.2f}, authority "
+                            f"{memo.confidence.components.get('authority', 0):.2f}, coverage "
+                            f"{memo.confidence.components.get('coverage', 0):.2f}, retrieval "
+                            f"{memo.confidence.components.get('retrieval', 0):.2f}") if memo.confidence else ""),
         ]
         table = doc.add_table(rows=0, cols=2)
         table.style = "Light Grid Accent 1"

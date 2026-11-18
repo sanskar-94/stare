@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from stare.agents.base import AgentResult, BaseAgent
 from stare.agents.firewall_agent import summarize_checks
-from stare.agents.state import ResearchState, dump, load_memo
+from stare.agents.state import ResearchState, dump, load_authorities, load_memo, load_plan
+from stare.confidence import memo_confidence
 from stare.schemas import CitationCheck, Memo
 
 # every prose field that is exported (the question presented is editable too, so it is checked like the rest)
@@ -70,9 +71,12 @@ class MemoFirewallAgent(BaseAgent):
     def execute(self, state: ResearchState) -> AgentResult:
         memo = load_memo(state)
         cleaned, checks = check_memo(memo, self.deps.firewall)
+        verified = [a for a in load_authorities(state.get("verified"))
+                    if not (a.rank and a.rank.status == "flagged")]
+        cleaned = cleaned.model_copy(update={"confidence": memo_confidence(checks, verified, load_plan(state))})
         prior = [c for c in state.get("checks") or [] if c.get("phase") != "memo"]
         newly_removed = len(cleaned.removed_citations) - len(memo.removed_citations)
-        summary = f"Memo: {summarize_checks(checks)}"
+        summary = f"Memo: {summarize_checks(checks)}; confidence {cleaned.confidence.level} ({cleaned.confidence.score:.2f})"
         if newly_removed:
             summary += f"; {newly_removed} citation(s) removed from the draft"
         return AgentResult(

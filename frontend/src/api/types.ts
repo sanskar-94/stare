@@ -152,6 +152,14 @@ export interface Memo {
   removed_citations: string[];
   disclaimer: string;
   generated_by: string;
+  confidence?: Confidence | null;
+}
+
+export interface Confidence {
+  score: number;
+  level: string;
+  components: Record<string, number>;
+  notes: string[];
 }
 
 export type AgentName =

@@ -13,6 +13,8 @@ eval_app = typer.Typer(help="Evaluation (Table 29 metrics)", no_args_is_help=Tru
 app.add_typer(db_app, name="db")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(eval_app, name="eval")
+gen_app = typer.Typer(help="STARE-Gen: the memo-writing model trained in this project", no_args_is_help=True)
+app.add_typer(gen_app, name="gen")
 
 DEMO_USERS = [
     ("Daniel Ortiz", "attorney@stare.local", "attorney"),
@@ -302,6 +304,37 @@ def eval_baseline(
     out.write_text(json.dumps(result, indent=2))
     _echo(json.dumps({k: v for k, v in result.items() if k not in ("rows", "questions")} | {"questions": len(result.get("rows") or result.get("questions") or [])}, indent=2))
     _echo(f"written to {out}")
+
+
+@gen_app.command("data")
+def gen_data(max_train: int = typer.Option(6000, help="Most training examples to keep")) -> None:
+    """Build data/gen/{train,dev,test}.jsonl from the citation network of the corpus."""
+    from stare.db import session_scope
+    from stare.gen.data import build
+
+    with session_scope() as s:
+        _echo(str(build(s, max_train=max_train, say=_echo)))
+
+
+@gen_app.command("train")
+def gen_train(
+    examples: int = typer.Option(2400, help="Training examples to use (one pass)"),
+    accum: int = typer.Option(16, help="Examples per optimiser update"),
+    lr: float = typer.Option(1e-4, help="Peak learning rate"),
+    eval_every: int = typer.Option(25, help="Updates between dev-loss checks"),
+) -> None:
+    """Fine-tune SmolLM2-135M-Instruct into STARE-Gen (Apple GPU when available). Keeps the best dev checkpoint."""
+    from stare.gen.train import train
+
+    _echo(str(train(examples=examples, accum=accum, lr=lr, eval_every=eval_every, say=_echo)))
+
+
+@gen_app.command("eval")
+def gen_eval(limit: int = typer.Option(200, help="Test examples")) -> None:
+    """Compare STARE-Gen with the untrained base model on the held-out test set."""
+    from stare.gen.evaluate import evaluate
+
+    _echo(str(evaluate(limit=limit, say=_echo)))
 
 
 @app.command("demo")

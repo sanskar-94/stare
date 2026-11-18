@@ -92,6 +92,14 @@ export default function MemoEditor({ run, memo, items, isAttorney, onView, onCha
           <span className="flex items-center gap-2 text-xs font-normal text-muted">
             {run.memo_version != null && <span>Draft v{run.memo_version}</span>}
             <span>drafted by {memo.generated_by}</span>
+            {memo.confidence && (
+              <span
+                className={`chip ${memo.confidence.level === "High" ? "chip-ok" : memo.confidence.level === "Medium" ? "chip-warn" : "chip-bad"}`}
+                title={`Verification ${memo.confidence.components.verification ?? 0}, authority ${memo.confidence.components.authority ?? 0}, coverage ${memo.confidence.components.coverage ?? 0}, retrieval ${memo.confidence.components.retrieval ?? 0}${memo.confidence.notes.length ? ". " + memo.confidence.notes.join("; ") : ""}`}
+                aria-label={`Confidence ${memo.confidence.level}, ${memo.confidence.score.toFixed(2)}`}>
+                Confidence {memo.confidence.level} {memo.confidence.score.toFixed(2)}
+              </span>
+            )}
             {approved && run.memo_approved_at && <span className="chip chip-ok">Approved {fmtTime(run.memo_approved_at)}</span>}
           </span>
         </div>

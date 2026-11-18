@@ -250,6 +250,14 @@ class MemoCitation(BaseModel):
     status: CheckStatus = "verified"
 
 
+class Confidence(BaseModel):
+    """How well the memo is supported by checked authority (stare.confidence); not a prediction of the outcome."""
+    score: float
+    level: str
+    components: dict[str, float] = Field(default_factory=dict)
+    notes: list[str] = Field(default_factory=list)
+
+
 class Memo(BaseModel):
     title: str
     question_presented: str
@@ -263,6 +271,7 @@ class Memo(BaseModel):
     removed_citations: list[str] = Field(default_factory=list)  # blocked by the Firewall, listed in trace
     disclaimer: str = ""
     generated_by: str = "offline"  # provider/model that drafted the prose
+    confidence: Confidence | None = None  # set after the memo Firewall pass
 
 
 # ----------------------------------------------------------------------------------------------

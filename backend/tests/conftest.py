@@ -18,6 +18,8 @@ def _reset_caches() -> None:
 def settings(tmp_path, monkeypatch):
     monkeypatch.setenv("STARE_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("STARE_LLM_PROVIDER", "offline")
+    monkeypatch.setenv("STARE_MEMO_WRITER", "extractive")  # the trained model is tested separately
+    monkeypatch.setenv("STARE_EMBEDDER", "lsa")  # no model download in unit tests
     monkeypatch.setenv("STARE_COURTLISTENER_ENABLED", "false")  # tests never depend on the network
     monkeypatch.setenv("STARE_CAP_LOOKUP_ENABLED", "false")
     for key in ("STARE_COURTLISTENER_TOKEN", "STARE_LLM_API_KEY"):  # private keys in backend/.env.local stay unused

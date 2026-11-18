@@ -31,3 +31,6 @@ backend/STARE-demo-run*.docx
 
 # Reports, team files and earlier drafts stay on the laptop (they contain student IDs)
 deliverables/
+
+# Trained STARE-Gen weights (rebuilt with stare gen train)
+models/

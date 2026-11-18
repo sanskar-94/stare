@@ -18,6 +18,8 @@ from stare.agents.state import ResearchState, dump, load_authorities, load_case_
 from stare.courts.hierarchy import CourtHierarchy
 from stare.intake.elements import STATUTE_LABEL
 from stare.llm.base import LLMError
+from stare.gen.prompt import acceptable
+from stare.gen.writer import get_writer
 from stare.schemas import Authority, CaseRecord, Memo, MemoCitation, ResearchPlan
 from stare.text import split_sentences
 
@@ -82,6 +84,7 @@ class MemoAgent(BaseAgent):
                 )
             return f"{bluebook(a, self.deps.hierarchy)} {markers[a.key].marker}"
 
+        self.gen_used = self.gen_rejected = 0
         draft: _Draft | None = None
         if not self.llm.is_offline:
             draft = self._llm_draft(record, plan, support, state, cite)
@@ -91,6 +94,8 @@ class MemoAgent(BaseAgent):
             if not self.llm.is_offline:
                 drafted_by = f"offline fallback ({self.llm.name} unavailable)"
 
+        if self.gen_used:
+            drafted_by = f"{drafted_by} + STARE-Gen ({self.gen_used} rule sentences, {self.gen_rejected} rejected)"
         adverse_text = self._adverse_section(adverse, state.get("procedural_flags") or [], cite)
         warnings = [_warning_line(a) for a in flagged + [a for a in verified + adverse if a.verification
                                                           and a.verification.status == "warning" and a not in flagged]]
@@ -115,8 +120,10 @@ class MemoAgent(BaseAgent):
         )
         return AgentResult(
             update={"memo": dump(memo), "memo_feedback": "", "status": "researching"},
-            summary=f"Drafted IRAC memo with {len(markers)} linked citations, {len(warnings)} warnings",
-            data={"citations": len(markers), "warnings": len(warnings), "removed": len(removed)},
+            summary=f"Drafted IRAC memo with {len(markers)} linked citations, {len(warnings)} warnings"
+                    + (f"; STARE-Gen wrote {self.gen_used} rule sentences" if self.gen_used else ""),
+            data={"citations": len(markers), "warnings": len(warnings), "removed": len(removed),
+                  "gen_sentences": self.gen_used, "gen_rejected": self.gen_rejected},
         )
 
     # ------------------------------------------------------------------------------------------ offline
@@ -144,6 +151,9 @@ class MemoAgent(BaseAgent):
             cases = [x for x in mine if x.kind == "case"]
             for a in cases[:MAX_CASES_PER_ITEM]:
                 weight = a.rank.reason if a.rank else ""
+                rule_sentence = self._generated_rule(a)
+                if rule_sentence:
+                    sentences.append(rule_sentence)
                 if a.quote:
                     # the weight goes before the quotation, so each authority stays one sentence for the Firewall
                     end = "" if a.quote.rstrip()[-1:] in ".?!" else "."
@@ -176,6 +186,21 @@ class MemoAgent(BaseAgent):
         if state.get("memo_feedback"):
             conclusion += f"\n\nAttorney instruction recorded for revision: {state['memo_feedback']}"
         return _Draft(issue=issue, rule=rule, application=application, conclusion=conclusion)
+
+    def _generated_rule(self, a: Authority) -> str:
+        """One rule sentence written by STARE-Gen from the authority's own verified passage, or "" when the
+        trained writer is off or its sentence fails the grounding check (no citation of its own, and most of
+        its content words must appear in the passage)."""
+        writer = get_writer(self.deps.settings)
+        source = a.passages[0].text if a.passages else ""
+        if writer is None or not source:
+            return ""
+        sentence = writer.write(source, a.case_name)
+        if not acceptable(sentence, source):
+            self.gen_rejected += 1
+            return ""
+        self.gen_used += 1
+        return sentence
 
     @staticmethod
     def _closest_allegation(element: str, text: str) -> str:

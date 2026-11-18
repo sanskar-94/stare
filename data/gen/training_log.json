@@ -1,0 +1,32 @@
+{
+  "base_model": "HuggingFaceTB/SmolLM2-135M-Instruct",
+  "device": "mps",
+  "examples": 32,
+  "accum": 8,
+  "lr": 0.0001,
+  "max_len": 384,
+  "updates_planned": 4,
+  "checks": [
+    {
+      "update": 0,
+      "dev_loss": 2.6357,
+      "minutes": 0.0
+    },
+    {
+      "update": 2,
+      "train_loss": 2.858,
+      "dev_loss": 2.4437,
+      "minutes": 0.2
+    },
+    {
+      "update": 4,
+      "train_loss": 2.584,
+      "dev_loss": 2.4126,
+      "minutes": 0.4
+    }
+  ],
+  "best_update": 4,
+  "stopped": "completed",
+  "best_dev_loss": 2.4126,
+  "minutes": 0.4
+}

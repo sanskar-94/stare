@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_max_tokens: int = 8000
     llm_cache: bool = True  # cache identical prompts on disk to control cost
+    # STARE-Gen, the rule-sentence writer trained in this project (stare gen train). "auto" uses it when the
+    # model folder and PyTorch are present, otherwise the memo is drafted extractively.
+    memo_writer: Literal["auto", "extractive", "stare_gen"] = "auto"
+    gen_model_dir: Path = REPO_DIR / "models" / "stare-gen"
 
     # --- retrieval -----------------------------------------------------------------------------
     embedder: Literal["lsa", "fastembed", "sentence_transformers"] = "lsa"
