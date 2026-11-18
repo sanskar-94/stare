@@ -11,6 +11,8 @@ Sanskar Awasthi, Rishant Ranjan, Adarsh Singh and Rahul Yadav. Supervisor: Dr. P
 
 > Research material for licensed attorneys. Not legal advice.
 
+**New here?** Start with [GUIDE.md](GUIDE.md): a one-page guide to setting up, running and demoing STARE.
+
 ## What it does
 
 ```
