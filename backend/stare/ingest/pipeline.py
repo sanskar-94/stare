@@ -11,13 +11,13 @@ from pathlib import Path
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from stare.text import part_at
 from stare.config import Settings, get_settings
 from stare.courts.hierarchy import CourtHierarchy
 from stare.db.models import Chunk, CourtRow, Opinion, StatuteSection
 from stare.ingest.chunker import chunk_text
 from stare.ingest.seed import build_seed
 from stare.ingest.statutes import fetch_statutes, import_statutes
+from stare.text import part_at
 
 
 def load_courts(session: Session) -> int:

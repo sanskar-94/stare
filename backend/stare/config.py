@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     keep_raw_uploads: bool = False  # NFR-03: raw client files are deleted after extraction by default
 
     # --- security ------------------------------------------------------------------------------
-    jwt_secret: str = "change-me-in-production"
+    jwt_secret: str = "change-me-in-production"  # placeholder: a random per-install key (data/.jwt_secret) is used
     jwt_ttl_minutes: int = 12 * 60
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
@@ -73,6 +73,9 @@ class Settings(BaseSettings):
 
     # --- performance ---------------------------------------------------------------------------
     latency_target_s: float = 90.0
+    warm_up: bool = True  # load the search index and embedding model when the API server starts
+    # The built React app (npm run build) is served at / by `stare serve`, so one command runs everything.
+    frontend_dist: Path = REPO_DIR / "frontend" / "dist"
 
     @property
     def db_url(self) -> str:

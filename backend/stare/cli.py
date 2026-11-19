@@ -384,9 +384,17 @@ def demo(sample: Path = typer.Argument(Path(__file__).resolve().parents[2] / "da
 
 @app.command("serve")
 def serve(host: str = "127.0.0.1", port: int = 8000, reload: bool = False) -> None:
-    """Run the API server (the React app proxies /api to it)."""
+    """Run STARE: the API and, once built (npm run build), the web app at http://127.0.0.1:8000."""
     import uvicorn
 
+    from stare.config import get_settings
+
+    dist = get_settings().frontend_dist
+    if (dist / "index.html").is_file():
+        typer.echo(f"STARE is starting: open http://{host}:{port} (API docs at /docs)")
+    else:
+        typer.echo(f"API only at http://{host}:{port}: build the web app with `cd frontend && npm run build`, "
+                   "or run `npm run dev` and open http://localhost:5173")
     uvicorn.run("stare.api.main:app", host=host, port=port, reload=reload)
 
 

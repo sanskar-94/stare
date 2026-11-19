@@ -14,9 +14,9 @@ from eyecite import get_citations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from stare.text import mark_separate_opinions, part_marker, strip_syllabus
 from stare.courts.hierarchy import CourtHierarchy
 from stare.db.models import Citation, CitationEdge, CourtRow, Opinion
+from stare.text import mark_separate_opinions, part_marker, strip_syllabus
 
 CAP_BASE = "https://static.case.law"
 USER_AGENT = "STARE-capstone/0.1 (academic research; free public data)"

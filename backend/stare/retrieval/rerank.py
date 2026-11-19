@@ -91,9 +91,12 @@ class CrossEncoderReranker:
         if not chunks:
             return []
         if self._model is None:
+            from stare._quiet import load_cached_first, quiet_ml_imports
+
+            quiet_ml_imports()
             from sentence_transformers import CrossEncoder  # optional dependency
 
-            self._model = CrossEncoder(self.model_name)
+            self._model = load_cached_first(CrossEncoder, self.model_name)
         scores = self._model.predict([(query, c.text) for c in chunks])
         scored = [c.model_copy(update={"rerank_score": float(s)}) for c, s in zip(chunks, scores, strict=True)]
         return sorted(scored, key=lambda c: -(c.rerank_score or 0.0))

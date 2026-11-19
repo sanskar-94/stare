@@ -1,4 +1,4 @@
-import type { AgentName, StepStatus, TraceEvent } from "../api/types";
+import type { AgentName, RunOut, StepStatus, TraceEvent } from "../api/types";
 
 export interface TraceRow {
   id: string;
@@ -72,4 +72,42 @@ function toRow(agent: AgentName, label: string, e: TraceEvent | null, _n: number
     id: `${agent}${tag}`, agent, label, status: e.status, summary: e.summary, duration_ms: e.duration_ms,
     started_at: e.started_at, runs, placeholder: false,
   };
+}
+
+export type StageState = "done" | "current" | "waiting" | "error";
+export interface Stage {
+  key: string;
+  label: string;
+  state: StageState;
+  gate?: boolean; // an attorney approval gate
+}
+
+/** The run as nine stages, for the pipeline strip at the top of the workspace. */
+export function pipeline(run: RunOut, trace: TraceRow[]): Stage[] {
+  const st = run.status;
+  const row = (agent: AgentName, label?: string) => trace.find((t) => t.agent === agent && (!label || t.label === label));
+  const fromRow = (r?: TraceRow): StageState =>
+    !r || r.placeholder ? "waiting" : r.status === "done" || r.status === "skipped" ? "done" : r.status === "error" ? "error" : r.status === "running" ? "current" : "waiting";
+  const planDone = !!run.plan_approved_at || !["intake_running", "awaiting_plan_approval"].includes(st);
+  const memoApproved = st === "approved" || st === "exported";
+  const memoRow = row("memo");
+  const fwMemo = row("citation_firewall", "Citation Firewall (memo)");
+  let memoState = fromRow(memoRow);
+  if (memoState === "done" && fwMemo && !fwMemo.placeholder && fwMemo.status !== "done") memoState = fromRow(fwMemo);
+  const stages: Stage[] = [
+    { key: "intake", label: "Read documents", state: st === "intake_running" ? "current" : fromRow(row("intake")) },
+    { key: "plan", label: "Plan approved", gate: true, state: planDone ? "done" : st === "awaiting_plan_approval" ? "current" : "waiting" },
+    { key: "research", label: "Research", state: fromRow(row("research")) },
+    { key: "precedent", label: "Rank by court", state: fromRow(row("precedent")) },
+    { key: "opposing", label: "Opposing counsel", state: fromRow(row("opposing_counsel")) },
+    { key: "firewall", label: "Citation Firewall", state: fromRow(row("citation_firewall", "Citation Firewall")) },
+    { key: "memo", label: "Memo drafted", state: memoState },
+    { key: "approve", label: "Memo approved", gate: true, state: memoApproved ? "done" : st === "awaiting_memo_approval" ? "current" : "waiting" },
+    { key: "export", label: "Exported", state: st === "exported" ? "done" : st === "approved" ? "current" : "waiting" },
+  ];
+  if (st === "failed") {
+    const i = stages.findIndex((s) => s.state === "current" || s.state === "waiting");
+    if (i >= 0) stages[i] = { ...stages[i], state: "error" };
+  }
+  return stages;
 }

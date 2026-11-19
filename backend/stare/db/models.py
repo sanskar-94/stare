@@ -32,6 +32,33 @@ def utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+class UTCDateTime(TypeDecorator):
+    """A timestamp that always comes back timezone-aware (UTC).
+
+    SQLite has no time-zone type and returns naive datetimes, which the API then sent without a
+    zone, so browsers read UTC times as local time (5.5 hours off in India). PostgreSQL keeps
+    timestamptz; on SQLite the value is stored as naive UTC, as before.
+    """
+
+    impl = DateTime
+    cache_ok = True
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("timezone", True)
+        super().__init__(*args, **kwargs)
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        value = (value if value.tzinfo else value.replace(tzinfo=UTC)).astimezone(UTC)
+        return value if dialect.name == "postgresql" else value.replace(tzinfo=None)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return None
+        return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
+
 class EmbeddingType(TypeDecorator):
     """numpy float32 vector <-> pgvector (PostgreSQL) or raw bytes (SQLite)."""
 
@@ -83,7 +110,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(200))
     role: Mapped[str] = mapped_column(String(20))  # attorney | paralegal | admin
     active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
 class CaseFile(Base):
@@ -100,7 +127,7 @@ class CaseFile(Base):
     case_record: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # CaseRecord as dict
     notes: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(30), default="open")  # open | closed
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
     documents: Mapped[list[Document]] = relationship(back_populates="case_file", cascade="all, delete-orphan")
     runs: Mapped[list[ResearchRun]] = relationship(back_populates="case_file", cascade="all, delete-orphan")
@@ -118,8 +145,8 @@ class Document(Base):
     redaction_entities: Mapped[list] = mapped_column(JSON, default=list)  # list[RedactedEntity]
     redaction_engine: Mapped[str] = mapped_column(String(20), default="regex")
     reviewed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    reviewed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
     case_file: Mapped[CaseFile] = relationship(back_populates="documents")
 
@@ -159,9 +186,9 @@ class ResearchRun(Base):
     cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
     llm_provider: Mapped[str] = mapped_column(String(40), default="offline")
     plan_approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
-    plan_approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    plan_approved_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
 
     case_file: Mapped[CaseFile] = relationship(back_populates="runs")
     steps: Mapped[list[AgentStep]] = relationship(
@@ -183,8 +210,8 @@ class AgentStep(Base):
     status: Mapped[str] = mapped_column(String(20))
     summary: Mapped[str] = mapped_column(Text, default="")
     output_json: Mapped[dict] = mapped_column(JSON, default=dict)
-    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     run: Mapped[ResearchRun] = relationship(back_populates="steps")
@@ -204,7 +231,7 @@ class CitationCheckRow(Base):
     status: Mapped[str] = mapped_column(String(20))  # verified | warning | blocked | unresolved
     reason: Mapped[str] = mapped_column(Text, default="")
     check_json: Mapped[dict] = mapped_column(JSON, default=dict)  # full CitationCheck
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
     run: Mapped[ResearchRun] = relationship(back_populates="checks")
 
@@ -218,9 +245,9 @@ class MemoRow(Base):
     irac_json: Mapped[dict] = mapped_column(JSON)  # Memo
     edited_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     approved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
-    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    exported_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    approved_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    exported_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
     run: Mapped[ResearchRun] = relationship(back_populates="memos")
 
@@ -231,7 +258,7 @@ class AuditLog(Base):
     __tablename__ = "audit_log"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, index=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     action: Mapped[str] = mapped_column(String(60))  # e.g. "plan.approved", "memo.exported"
     entity: Mapped[str] = mapped_column(String(40))  # "run", "matter", "document", "user"
@@ -280,7 +307,7 @@ class Opinion(Base):
     source: Mapped[str] = mapped_column(String(30))  # cap | courtlistener | courtlistener_bulk | fixture
     source_id: Mapped[str] = mapped_column(String(80), default="")  # stable id in the source
     url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    imported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    imported_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
     __table_args__ = (UniqueConstraint("source", "source_id", name="uq_opinion_source"),)
 

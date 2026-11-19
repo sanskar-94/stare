@@ -53,10 +53,14 @@ def get_db(request: Request) -> Iterator[Session]:
         yield session
 
 
-def get_service(request: Request) -> ResearchService:
-    app = request.app
+def service_for(app: FastAPI) -> ResearchService:
+    """The application's ResearchService, built on first use."""
     ensure_state(app)
     with _lock:
         if app.state.service is None:
             app.state.service = ResearchService(app.state.session_factory, app.state.settings)
     return app.state.service
+
+
+def get_service(request: Request) -> ResearchService:
+    return service_for(request.app)

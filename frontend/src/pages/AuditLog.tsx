@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import type { AuditRow } from "../api/types";
-import { ErrorBox } from "../components/Spinner";
+import { ScrollText } from "lucide-react";
+import { ErrorBox, PageHeader } from "../components/Spinner";
 import { errMsg, fmtDate } from "../util";
 
 export default function AuditLog() {
@@ -22,7 +23,7 @@ export default function AuditLog() {
   const actions = Array.from(new Set((rows ?? []).map((r) => r.action))).sort();
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-navy">Audit log</h1>
+      <PageHeader icon={<ScrollText size={20} />} title="Audit log" sub="Every login, upload, approval, export and setting change, with who did it and when." />
       <form className="card card-b flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); load(); }}>
         <div>
           <label className="label" htmlFor="af-a">Action</label>

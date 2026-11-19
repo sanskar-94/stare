@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { CheckCircle2, CircleHelp, Eraser, FileText, Loader2, OctagonX, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
 import { api } from "../api/client";
 import type { CitationCheck, FirewallCheckOut } from "../api/types";
 import SourceCard from "../components/SourceCard";
 import OpinionDrawer from "../components/OpinionDrawer";
-import { ErrorBox } from "../components/Spinner";
+import { ErrorBox, PageHeader } from "../components/Spinner";
 import type { SourceItem } from "../lib/sources";
 import { errMsg } from "../util";
 
@@ -41,27 +42,54 @@ export default function CheckDraft() {
   // strike removed sentences/spans in the cleaned text view: show original with removed strings struck
   const struck = res ? strike(text, res.removed) : null;
 
+  const tiles: { k: string; label: string; icon: React.ReactNode; tone: string }[] = [
+    { k: "verified", label: "Verified", icon: <CheckCircle2 size={18} />, tone: "bg-ok-bg text-ok" },
+    { k: "warning", label: "Warning", icon: <TriangleAlert size={18} />, tone: "bg-amber-bg text-amber-dark" },
+    { k: "blocked", label: "Blocked", icon: <OctagonX size={18} />, tone: "bg-bad-bg text-bad" },
+    { k: "unresolved", label: "Unresolved (treated as blocked)", icon: <CircleHelp size={18} />, tone: "bg-[#eef1f5] text-[#4b5566]" },
+  ];
+
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold text-navy">Check a draft (Citation Firewall)</h1>
-        <p className="text-muted">Paste a brief or draft. Every citation is extracted and verified against the case index; fabricated or unsupported authorities are blocked. Personal details are redacted before checking.</p>
-      </div>
+    <div className="space-y-5">
+      <PageHeader icon={<ShieldCheck size={20} />} title="Check a draft" eyebrow="Citation Firewall"
+        sub="Paste a brief or memo. Every citation is read, looked up in court records, its quotation compared, and its later treatment checked. Personal details are redacted first." />
+      <ol className="grid gap-2 text-[13px] sm:grid-cols-2 xl:grid-cols-4">
+        {[["1", "Extract", "eyecite reads full, short and id. citations"], ["2", "Exists?", "local index, then CAP and CourtListener; the name must match"],
+          ["3", "Quote matches?", "the quoted words must appear in the opinion"], ["4", "Still good law?", "later overruling or superseding treatment warns"]].map(([n, t, d]) => (
+          <li key={n} className="card flex items-start gap-2.5 px-3 py-2.5">
+            <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-navy text-[11px] font-bold text-amber">{n}</span>
+            <span><span className="font-semibold text-navy">Gate {n}: {t}</span><span className="block text-xs text-muted">{d}</span></span>
+          </li>
+        ))}
+      </ol>
       <div className="card card-b space-y-3">
-        <label className="label" htmlFor="draft">Draft text</label>
+        <label className="label flex items-center gap-1.5" htmlFor="draft"><FileText size={13} aria-hidden="true" />Draft text</label>
         <textarea id="draft" className="input legal h-56" value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste the text of a brief, motion or memo here..." />
         <div className="flex flex-wrap gap-2">
-          <button className="btn btn-amber" disabled={busy || !text.trim()} onClick={run}>{busy ? "Checking citations..." : "Check citations"}</button>
-          <button className="btn" onClick={() => { setText(MATA); setRes(null); }}>Load the Mata v. Avianca example</button>
-          {text && <button className="btn" onClick={() => { setText(""); setRes(null); }}>Clear</button>}
+          <button className="btn btn-amber" disabled={busy || !text.trim()} onClick={run}>
+            {busy ? <Loader2 size={15} className="spin" aria-hidden="true" /> : <ShieldCheck size={15} aria-hidden="true" />}
+            {busy ? "Checking citations..." : "Check citations"}
+          </button>
+          <button className="btn" onClick={() => { setText(MATA); setRes(null); }}><Sparkles size={15} aria-hidden="true" />Load the Mata v. Avianca example</button>
+          {text && <button className="btn" onClick={() => { setText(""); setRes(null); }}><Eraser size={15} aria-hidden="true" />Clear</button>}
         </div>
       </div>
       {err && <ErrorBox message={err} />}
       {res && (
         <>
-          <div className={`alert text-base font-semibold ${res.counts.blocked ? "alert-bad" : res.counts.warning ? "alert-warn" : "alert-ok"}`} role="status">
-            {res.summary}
-            {res.redaction_count > 0 && <span className="ml-3 text-xs font-normal">({res.redaction_count} personal detail(s) redacted before checking)</span>}
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {tiles.map((t) => (
+              <div key={t.k} className="card stat">
+                <span className={`stat-icon ${t.tone}`}>{t.icon}</span>
+                <span><span className="stat-value block">{res.counts[t.k] ?? 0}</span><span className="stat-label">{t.label}</span></span>
+              </div>
+            ))}
+          </div>
+          <div className={`alert flex items-center gap-2 text-base font-semibold ${res.counts.blocked || res.counts.unresolved ? "alert-bad" : res.counts.warning ? "alert-warn" : "alert-ok"}`} role="status">
+            {res.counts.blocked || res.counts.unresolved ? <OctagonX size={18} aria-hidden="true" /> : <CheckCircle2 size={18} aria-hidden="true" />}
+            <span>{res.summary}
+              {res.redaction_count > 0 && <span className="ml-2 text-xs font-normal">({res.redaction_count} personal detail(s) redacted before checking)</span>}
+            </span>
           </div>
           <div className="grid items-start gap-4 xl:grid-cols-2">
             <section aria-label="Citation results">
@@ -77,7 +105,7 @@ export default function CheckDraft() {
                 {res.removed.length > 0 && (
                   <div>
                     <h3 className="label">Removed by the Citation Firewall</h3>
-                    <p className="legal whitespace-pre-wrap rounded-md bg-bad-bg p-3 text-[14px]">
+                    <p className="legal whitespace-pre-wrap rounded-lg bg-bad-bg p-3 text-[14px]">
                       {struck!.map((p, i) => p.removed ? <del key={i} className="text-bad">{p.t}</del> : <span key={i}>{p.t}</span>)}
                     </p>
                     <ul className="mt-2 space-y-1">{res.removed.map((r, i) => <li key={i} className="alert alert-bad text-[13px]"><del>{r}</del></li>)}</ul>

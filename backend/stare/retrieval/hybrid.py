@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
+from collections import OrderedDict
 from collections.abc import Callable, Collection
 
 import numpy as np
@@ -42,6 +44,12 @@ class HybridRetriever:
         self._embedder: Embedder | None = None
         self._matrix: np.ndarray | None = None  # (n, dim) float32, memory-mapped
         self._dense_ids: np.ndarray | None = None
+        # A run sends the same ~18 queries through five search passes with different filters. The query vector and
+        # its scores against every chunk do not depend on the filter, so each is computed once (results are
+        # identical): far less work, and on an 8 GB laptop far fewer passes over the 160 MB matrix when memory is short.
+        self._cache_lock = threading.Lock()
+        self._qvec: OrderedDict[str, np.ndarray] = OrderedDict()
+        self._qscores: OrderedDict[str, np.ndarray] = OrderedDict()
 
     # ------------------------------------------------------------------ build
     @classmethod
@@ -103,7 +111,45 @@ class HybridRetriever:
         self._embedder = load_embedder(self.settings, d / EMBEDDER_FILE, meta.get("embedder"))
         self._matrix = np.load(d / DENSE_FILE, mmap_mode="r")
         self._dense_ids = np.load(d / DENSE_IDS_FILE)
+        with self._cache_lock:
+            self._qvec.clear()
+            self._qscores.clear()
         self._loaded_mtime = mtime
+
+    @staticmethod
+    def _lru_get(cache: OrderedDict, key: str):
+        v = cache.get(key)
+        if v is not None:
+            cache.move_to_end(key)
+        return v
+
+    @staticmethod
+    def _lru_put(cache: OrderedDict, key: str, value, limit: int) -> None:
+        cache[key] = value
+        cache.move_to_end(key)
+        while len(cache) > limit:
+            cache.popitem(last=False)
+
+    def _query_vector(self, query: str) -> np.ndarray:
+        assert self._embedder is not None
+        with self._cache_lock:
+            v = self._lru_get(self._qvec, query)
+        if v is None:
+            v = self._embedder.embed([query])[0]
+            with self._cache_lock:
+                self._lru_put(self._qvec, query, v, 512)
+        return v
+
+    def _query_scores(self, query: str, qv: np.ndarray) -> np.ndarray:
+        """Cosine score of the query against every chunk (read-only; copy before changing it)."""
+        assert self._matrix is not None
+        with self._cache_lock:
+            sc = self._lru_get(self._qscores, query)
+        if sc is None:
+            sc = np.asarray(self._matrix @ qv, dtype=np.float32)
+            with self._cache_lock:
+                self._lru_put(self._qscores, query, sc, 48)  # 48 x 416 KB for 104k chunks
+        return sc
 
     # ------------------------------------------------------------------ search
     def _allowed_ids(self, session: Session, kinds, court_ids, opinion_ids=None) -> set[int] | None:
@@ -119,10 +165,10 @@ class HybridRetriever:
         return set(session.scalars(q))
 
     def _dense_search(
-        self, session: Session, query: str, n: int, kinds, court_ids, allowed: set[int] | None, opinion_ids=None
+        self, session: Session, query: str, n: int, kinds, court_ids, allowed: set[int] | None, opinion_ids=None,
+        mask: np.ndarray | None = None,
     ) -> list[int]:
-        assert self._embedder is not None
-        qv = self._embedder.embed([query])[0]
+        qv = self._query_vector(query)
         if not qv.any():
             return []
         if self.settings.is_postgres:  # pgvector: cosine distance operator
@@ -142,28 +188,40 @@ class HybridRetriever:
             sql += "WHERE " + " AND ".join(where) + " ORDER BY c.embedding <=> CAST(:q AS vector) LIMIT :n"
             return [r[0] for r in session.execute(text(sql), params)]
         assert self._matrix is not None and self._dense_ids is not None
-        scores = np.asarray(self._matrix @ qv, dtype=np.float32)
+        scores = self._query_scores(query, qv)
         if allowed is not None:
-            scores[~np.isin(self._dense_ids, np.fromiter(allowed, dtype=np.int64))] = 0.0
+            if mask is None:
+                mask = self._allowed_mask(allowed)
+            scores = np.where(mask, scores, np.float32(0.0))
         return [cid for cid, _ in top_k(self._dense_ids, scores, n)]
+
+    def _allowed_mask(self, allowed: set[int] | None) -> np.ndarray | None:
+        """Boolean mask over the dense matrix rows for a filter (computed once per search pass)."""
+        if allowed is None or self._dense_ids is None or self.settings.is_postgres:
+            return None
+        return np.isin(self._dense_ids, np.fromiter(allowed, dtype=np.int64))
 
     def search(
         self, query: str, k: int = 30, *, kinds: Collection[str] | None = None,
         court_ids: Collection[str] | None = None, opinion_ids: Collection[int] | None = None,
     ) -> list[RetrievedChunk]:
         self._load()
-        assert self._bm25 is not None
-        n = max(self.settings.candidates_per_query, k)
         with self.session_factory() as s:
             allowed = self._allowed_ids(s, kinds, court_ids, opinion_ids)
-            if opinion_ids and not allowed:
-                return []
-            bm25_ids = [cid for cid, _ in self._bm25.search(query, n, allowed)]
-            dense_ids = self._dense_search(s, query, n, kinds, court_ids, allowed, opinion_ids)
-            fused = rrf([bm25_ids, dense_ids], self.settings.rrf_k)[: max(2 * k, 50, 0)]
-            if not fused:
-                return []
-            rows = {c.id: c for c in s.scalars(select(Chunk).where(Chunk.id.in_([i for i, _ in fused])))}
+            return self._search(s, query, k, kinds, court_ids, opinion_ids, allowed, self._allowed_mask(allowed))
+
+    def _search(self, s: Session, query: str, k: int, kinds, court_ids, opinion_ids, allowed: set[int] | None,
+                mask: np.ndarray | None = None) -> list[RetrievedChunk]:
+        assert self._bm25 is not None
+        n = max(self.settings.candidates_per_query, k)
+        if opinion_ids and not allowed:
+            return []
+        bm25_ids = [cid for cid, _ in self._bm25.search(query, n, allowed)]
+        dense_ids = self._dense_search(s, query, n, kinds, court_ids, allowed, opinion_ids, mask)
+        fused = rrf([bm25_ids, dense_ids], self.settings.rrf_k)[: max(2 * k, 50, 0)]
+        if not fused:
+            return []
+        rows = {c.id: c for c in s.scalars(select(Chunk).where(Chunk.id.in_([i for i, _ in fused])))}
         b_rank = {cid: r for r, cid in enumerate(bm25_ids, 1)}
         d_rank = {cid: r for r, cid in enumerate(dense_ids, 1)}
         cands = [
@@ -178,9 +236,15 @@ class HybridRetriever:
         ]
         return self.reranker.rerank(query, cands)[:k]
 
-    def search_many(self, queries: list[str], k: int = 30, **kw) -> list[RetrievedChunk]:
-        """RAG-Fusion: one query per legal element, result lists fused by RRF."""
-        per_query = [self.search(q, k=k, **kw) for q in queries]
+    def search_many(self, queries: list[str], k: int = 30, *, kinds: Collection[str] | None = None,
+                    court_ids: Collection[str] | None = None, opinion_ids: Collection[int] | None = None,
+                    ) -> list[RetrievedChunk]:
+        """RAG-Fusion: one query per legal element, result lists fused by RRF (the filter is resolved once)."""
+        self._load()
+        with self.session_factory() as s:
+            allowed = self._allowed_ids(s, kinds, court_ids, opinion_ids)
+            mask = self._allowed_mask(allowed) if allowed else None
+            per_query = [self._search(s, q, k, kinds, court_ids, opinion_ids, allowed, mask) for q in queries]
         fused = rrf([[c.chunk_id for c in res] for res in per_query], self.settings.rrf_k)
         return self._fuse_best(per_query, fused, k)
 

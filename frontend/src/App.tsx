@@ -3,6 +3,7 @@ import { useAuth } from "./auth/AuthContext";
 import type { Role } from "./api/types";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import ServerBanner from "./components/ServerBanner";
 import Login from "./pages/Login";
 import Matters from "./pages/Matters";
 import MatterPage from "./pages/MatterPage";
@@ -20,7 +21,8 @@ function Shell({ roles }: { roles?: Role[] }) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main id="main" className="mx-auto w-full max-w-[1600px] flex-1 px-4 pb-20 pt-5">
+      <ServerBanner />
+      <main id="main" className="mx-auto w-full max-w-[1600px] flex-1 px-5 pb-10 pt-6">
         {denied ? (
           <div className="alert alert-warn">Your role ({user.role}) does not have access to this page.</div>
         ) : (
@@ -36,7 +38,7 @@ export default function App() {
   const { user } = useAuth();
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <><Login /><Footer /></>} />
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route element={<Shell />}>
         <Route path="/" element={<Matters />} />
         <Route path="/matters/:id" element={<MatterPage />} />

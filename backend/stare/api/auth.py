@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import os
+import secrets
+import threading
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -43,11 +46,37 @@ def verify_password(password: str, hashed: str) -> bool:
         return False
 
 
+PLACEHOLDER_SECRET = "change-me-in-production"
+_secret_lock = threading.Lock()
+
+
+def signing_key(settings: Settings) -> str:
+    """The JWT signing key: STARE_JWT_SECRET when set, otherwise a random key kept in the data folder.
+
+    The old built-in default was a public, 23-byte string. A fresh install now creates its own 64-character
+    key on first use (data/.jwt_secret, readable by the owner only), so no two installs share a key.
+    """
+    if settings.jwt_secret and settings.jwt_secret != PLACEHOLDER_SECRET:
+        return settings.jwt_secret
+    path = settings.data_dir / ".jwt_secret"
+    with _secret_lock:
+        try:
+            key = path.read_text().strip()
+        except FileNotFoundError:
+            key = ""
+        if len(key) < 32:
+            key = secrets.token_urlsafe(48)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(key)
+            os.chmod(path, 0o600)
+    return key
+
+
 def create_token(user: User, settings: Settings) -> str:
     now = datetime.now(UTC)
     payload = {"sub": str(user.id), "role": user.role, "iat": now,
                "exp": now + timedelta(minutes=settings.jwt_ttl_minutes)}
-    return jwt.encode(payload, settings.jwt_secret, algorithm=ALGORITHM)
+    return jwt.encode(payload, signing_key(settings), algorithm=ALGORITHM)
 
 
 def _unauthorized(msg: str = "Not authenticated") -> HTTPException:
@@ -59,7 +88,7 @@ def _resolve(request: Request, token: str | None) -> CurrentUser:
         raise _unauthorized()
     settings = get_settings_dep(request)
     try:
-        payload = jwt.decode(token, settings.jwt_secret, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, signing_key(settings), algorithms=[ALGORITHM])
         uid = int(payload["sub"])
     except jwt.ExpiredSignatureError:
         raise _unauthorized("Session expired; sign in again") from None

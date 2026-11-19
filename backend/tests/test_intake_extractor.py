@@ -9,6 +9,7 @@ import pytest
 from stare.courts.hierarchy import CourtHierarchy
 from stare.intake import elements
 from stare.intake.extractor import (
+    LLMCaseExtraction,
     extract_case_record,
     extract_claims,
     extract_court,
@@ -21,7 +22,7 @@ from stare.intake.extractor import (
 from stare.intake.pdf_reader import extract_document
 from stare.intake.redactor import PIIRedactor
 from stare.llm import ChatModel, LLMError, OfflineModel, assert_redacted
-from stare.intake.extractor import LLMCaseExtraction
+from stare.llm.base import UnredactedTextError
 
 SAMPLES = Path(__file__).resolve().parents[2] / "data" / "samples"
 H = CourtHierarchy.default()
@@ -240,6 +241,6 @@ def test_llm_error_falls_back_to_rules(ndtex):
 
 
 def test_unredacted_text_never_reaches_llm():
-    with pytest.raises(Exception):
+    with pytest.raises(UnredactedTextError):
         # the ChatModel guard itself refuses; the extractor must not swallow a PII leak silently
         FakeLLM(LLMCaseExtraction()).complete_json("s", "SSN 123-45-6789", LLMCaseExtraction)

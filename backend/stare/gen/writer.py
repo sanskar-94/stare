@@ -24,6 +24,9 @@ class StareGen:
 
     def __init__(self, path: Path | str, device: str | None = None):
         os.environ.setdefault("HF_HUB_OFFLINE", "1")
+        from stare._quiet import quiet_ml_imports
+
+        quiet_ml_imports()
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 

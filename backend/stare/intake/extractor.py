@@ -227,17 +227,23 @@ def extract_claims(text: str) -> list[Claim]:
     for st in doc_statutes:
         found = False
         if re.search(r"(?i)retaliat", low):
-            add(st, "retaliation", "Retaliation"); found = True
+            add(st, "retaliation", "Retaliation")
+            found = True
         if re.search(r"(?i)hostile work environment|harassment", low):
-            add(st, "hostile_work_environment", "Hostile work environment"); found = True
+            add(st, "hostile_work_environment", "Hostile work environment")
+            found = True
         if st == "ada" and re.search(r"(?i)accommodat", low):
-            add(st, "failure_to_accommodate", "Failure to accommodate"); found = True
+            add(st, "failure_to_accommodate", "Failure to accommodate")
+            found = True
         if st == "title_vii" and re.search(r"(?i)religio\w+\s+accommodat|accommodat\w+\s+(?:of|for)\s+(?:her|his|their)\s+religio", low):
-            add(st, "religious_accommodation", "Religious accommodation"); found = True
+            add(st, "religious_accommodation", "Religious accommodation")
+            found = True
         if st == "title_vii" and re.search(r"(?i)pregnan", low):
-            add(st, "pregnancy", "Pregnancy discrimination"); found = True
+            add(st, "pregnancy", "Pregnancy discrimination")
+            found = True
         if re.search(r"(?i)disparate impact", low):
-            add(st, "disparate_impact", "Disparate impact"); found = True
+            add(st, "disparate_impact", "Disparate impact")
+            found = True
         if re.search(r"(?i)discriminat|terminat|fired|demot", low) or not found:
             add(st, "disparate_treatment", "Discrimination (disparate treatment)")
     return claims
@@ -321,7 +327,6 @@ def extract_key_dates(text: str) -> list[KeyDate]:
         if iso:
             spans.append((m.start(), m.end(), iso))
     found: dict[str, str] = {}
-    prev_end = 0
     for i, (s, e, iso) in enumerate(spans):
         # clause = text since the previous sentence end / previous date, up to this date
         sent_start = max(text.rfind(". ", 0, s), text.rfind(".\n", 0, s), text.rfind("\n\n", 0, s), 0)

@@ -11,9 +11,9 @@ from sqlalchemy import select
 from stare.agents.base import AgentResult, BaseAgent
 from stare.agents.routing import Route, classify, resolve
 from stare.agents.state import ResearchState, dump, load_case_record, load_plan
+from stare.db.models import CitationEdge, StatuteSection
 from stare.intake.elements import PROCEDURAL, STATUTE_LABEL, THEORIES
 from stare.llm.base import LLMError
-from stare.db.models import CitationEdge, StatuteSection
 from stare.schemas import Authority, PlanItem
 
 # Co-citation: among the best case authorities found for a plan item, an opinion that many of them cite is a

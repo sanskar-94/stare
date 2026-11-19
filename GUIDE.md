@@ -45,17 +45,22 @@ npm install
 
 ## Run it (every time)
 
-You need two terminals.
+Build the web app once (again only after changing the frontend code):
 
 ```bash
-cd backend && .venv/bin/stare serve      # API on http://127.0.0.1:8000
+cd frontend && npm install && npm run build
 ```
+
+Then one command runs everything:
 
 ```bash
-cd frontend && npm run dev               # app on http://localhost:5173
+cd backend && .venv/bin/stare serve      # web app + API on http://127.0.0.1:8000
 ```
 
-Open http://localhost:5173 and sign in. The password for every account is `stare-demo`.
+Open http://127.0.0.1:8000 and sign in. The password for every account is `stare-demo`. For about 15 seconds
+after start-up the header shows "Loading search..." while the search index and embedding model load; the first
+run is then as fast as the rest. (For frontend development, `cd frontend && npm run dev` serves the app with hot
+reload on http://localhost:5173.)
 
 | Account | Role |
 |---|---|
@@ -67,7 +72,7 @@ Open http://localhost:5173 and sign in. The password for every account is `stare
 
 1. Sign in as the attorney and click **+ New matter**. Search the court list for "N.D. Tex", pick it, and create the matter.
 2. Upload `data/samples/complaint_ndtex_title7_retaliation.pdf`. Names and personal details are redacted automatically.
-3. Click **Start research run**. The run stops at the research plan. Review the plan, then click **Approve plan**.
+3. Click **Start research run**. The run stops at the research plan. Review the plan, then click **Approve plan and start research**.
 4. The agents run, and the live trace shows each step. When they finish, look at the **Precedent graph** and the **Adverse** tab.
 5. Open the **Memo** tab, click **Approve memo**, then **Export DOCX**.
 6. Go to **Check a draft** and click **Load the Mata v. Avianca example**, then **Check citations**. The six fake cases are flagged.
@@ -123,6 +128,7 @@ Put settings in `backend/.env.local`. Copy `backend/.env.example` to create it; 
 | `stare: command not found` | Run it as `.venv/bin/stare` from inside `backend/` |
 | Login fails | Run `.venv/bin/stare db seed-users` again |
 | Search returns nothing | Run `stare ingest all --offline`, then `stare index build` |
-| Frontend shows network errors | Check that `stare serve` is running on port 8000 |
+| Red banner "The STARE server is not running" | Start `stare serve` (backend folder); the page reconnects by itself |
+| A run takes much longer than 20 seconds | The Mac is short of memory: close other apps (browsers, chat apps) and run again; macOS photo analysis (`mediaanalysisd`) can also slow an 8 GB Mac |
 | Port already in use | `lsof -ti :8000 \| xargs kill` (or `:5173`) |
 | Want a clean database | Delete `data/stare.db` and `data/checkpoints.sqlite`, then repeat the setup steps from `ingest` onwards |

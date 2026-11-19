@@ -48,16 +48,22 @@ function parseError(status: number, body: unknown, fallback: string): ApiError {
   return new ApiError(status, message, problems);
 }
 
-async function raw(path: string, init: RequestInit = {}, isForm = false): Promise<Response> {
+export const OFFLINE_MESSAGE = "Cannot reach the STARE server. Start it with `stare serve` (backend folder), then try again.";
+
+async function raw(path: string, init: RequestInit = {}, isForm = false, timeoutMs = 120_000): Promise<Response> {
   const headers = new Headers(init.headers);
   const t = tokenStore.get();
   if (t) headers.set("Authorization", `Bearer ${t}`);
   if (!isForm && init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, { ...init, headers });
-  } catch {
-    throw new ApiError(0, "Cannot reach the STARE server. Check that the API is running.");
+    res = await fetch(`/api${path}`, { ...init, headers, signal: ctrl.signal });
+  } catch (e) {
+    throw new ApiError(0, (e as Error)?.name === "AbortError" ? "The STARE server did not answer in time. Try again." : OFFLINE_MESSAGE);
+  } finally {
+    clearTimeout(timer);
   }
   if (res.status === 401 && !path.startsWith("/auth/login")) {
     tokenStore.clear();
@@ -66,13 +72,15 @@ async function raw(path: string, init: RequestInit = {}, isForm = false): Promis
   if (!res.ok) {
     let body: unknown = null;
     try { body = await res.json(); } catch { /* not json */ }
+    // the dev server's proxy answers 500/502/504 with no JSON body when the API is down
+    if (body === null && [500, 502, 503, 504].includes(res.status)) throw new ApiError(0, OFFLINE_MESSAGE);
     throw parseError(res.status, body, res.statusText || `Request failed (${res.status})`);
   }
   return res;
 }
 
-async function json<T>(path: string, init: RequestInit = {}, isForm = false): Promise<T> {
-  const res = await raw(path, init, isForm);
+async function json<T>(path: string, init: RequestInit = {}, isForm = false, timeoutMs?: number): Promise<T> {
+  const res = await raw(path, init, isForm, timeoutMs);
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
@@ -82,7 +90,7 @@ const body = (b: unknown): RequestInit => ({ body: JSON.stringify(b) });
 export const api = {
   login: (email: string, password: string) => json<TokenOut>("/auth/login", { method: "POST", ...body({ email, password }) }),
   me: () => json<User>("/auth/me"),
-  health: () => json<Health>("/health"),
+  health: () => json<Health>("/health", {}, false, 6_000),
   courts: () => json<Court[]>("/courts"),
 
   users: () => json<User[]>("/users"),

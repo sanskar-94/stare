@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -34,7 +34,7 @@ _redactor = None
 
 
 @router.get("/health", response_model=HealthOut, tags=["system"])
-def health(db: Session = Depends(get_db), settings: Settings = Depends(get_settings_dep)):
+def health(request: Request, db: Session = Depends(get_db), settings: Settings = Depends(get_settings_dep)):
     from stare.retrieval.hybrid import META_FILE
 
     try:
@@ -47,7 +47,8 @@ def health(db: Session = Depends(get_db), settings: Settings = Depends(get_setti
     except Exception:
         corpus, status = {"opinions": 0, "statutes": 0, "chunks": 0}, "degraded"
     return HealthOut(status=status, version=__version__, llm_provider=settings.llm_provider, corpus=corpus,
-                     index_built=(settings.index_dir / META_FILE).exists())
+                     index_built=(settings.index_dir / META_FILE).exists(),
+                     search_ready=getattr(request.app.state, "search_ready", None))
 
 
 @router.get("/courts", response_model=list[Court], tags=["courts"])

@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api/client";
 import type { Health, SettingsOut } from "../api/types";
-import { ErrorBox } from "../components/Spinner";
+import { Settings as SettingsIcon } from "lucide-react";
+import { ErrorBox, PageHeader } from "../components/Spinner";
 import { errMsg } from "../util";
 
 function providerText(p: string): string {
@@ -29,7 +30,7 @@ export default function Settings() {
 
   return (
     <div className="max-w-2xl space-y-4">
-      <h1 className="text-xl font-bold text-navy">Settings</h1>
+      <PageHeader icon={<SettingsIcon size={20} />} title="Settings" sub="Data retention and the read-only system status." />
       {err && <ErrorBox message={err} />}
       <form onSubmit={save} className="card card-b space-y-4" aria-label="Settings">
         <div>
@@ -52,9 +53,10 @@ export default function Settings() {
           <h2 className="mb-2 font-bold text-navy">System status</h2>
           <dl className="grid grid-cols-2 gap-y-1 text-[13px]">
             <dt className="text-muted">API</dt><dd>{h.status} (v{h.version})</dd>
-            <dt className="text-muted">Opinions indexed</dt><dd>{h.corpus?.opinions ?? "-"}</dd>
+            <dt className="text-muted">Opinions indexed</dt><dd>{h.corpus?.opinions?.toLocaleString() ?? "-"}</dd>
             <dt className="text-muted">Statute sections</dt><dd>{h.corpus?.statutes ?? "-"}</dd>
-            <dt className="text-muted">Search chunks</dt><dd>{h.corpus?.chunks ?? "-"}</dd>
+            <dt className="text-muted">Search chunks</dt><dd>{h.corpus?.chunks?.toLocaleString() ?? "-"}</dd>
+            <dt className="text-muted">Search index</dt><dd>{h.index_built ? (h.search_ready === false ? "built, loading" : "built and loaded") : "not built"}</dd>
           </dl>
         </section>
       )}

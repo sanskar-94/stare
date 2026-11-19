@@ -76,7 +76,7 @@ _STOP_TOKENS = {
     "may", "june", "july", "august", "september", "october", "november", "december", "parties", "party", "claim",
     "claims", "facts", "factual", "allegations", "jurisdiction", "venue", "background", "introduction", "nature",
     "attorney", "attorneys", "counsel", "esq", "pro", "se", "hon", "honorable", "judge", "justice", "magistrate",
-    "not", "no", "yes", "all", "any", "each", "such", "upon", "within", "without", "also", "then", "than", "because",
+    "not", "yes", "all", "any", "each", "such", "upon", "within", "without", "also", "then", "than", "because",
     "however", "therefore", "thus", "here", "there", "as", "if", "but", "so", "i", "we", "you", "our", "my", "me",
     "mr", "mrs", "ms", "miss", "dr", "sr", "jr", "ii", "iii", "iv", "texas", "california", "new", "york", "illinois",
     "dallas", "fort", "worth", "san", "francisco", "oakland", "chicago", "street", "avenue", "road",

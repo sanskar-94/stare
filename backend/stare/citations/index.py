@@ -53,7 +53,9 @@ class CitationIndex:
         rows = self.session.scalars(
             select(StatuteSection).where(StatuteSection.code == code, StatuteSection.title == title)
         ).all()
-        norm = lambda x: x.replace("–", "-").replace("—", "-").lower()
+        def norm(x: str) -> str:
+            return x.replace("–", "-").replace("—", "-").lower()
+
         for r in rows:
             if norm(strip_subsection(r.section)) == norm(section):
                 return r

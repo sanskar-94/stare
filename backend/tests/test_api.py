@@ -8,17 +8,17 @@ import json
 import pytest
 from docx import Document as DocxDocument
 from fastapi.testclient import TestClient
+from test_agents import RECORD, FakeFirewall, FakeRetriever
 
 from stare.api.auth import create_user
 from stare.api.main import create_app
 from stare.api.routers import misc
 from stare.citations.firewall import CitationFirewall
-from stare.db.models import AuditLog, CaseFile, CitationEdge, Document, Opinion
+from stare.db.models import AuditLog, CitationEdge, Document, Opinion
 from stare.graph.events import EventBus
 from stare.graph.service import ResearchService
 from stare.intake.redactor import PIIRedactor
 from stare.llm import OfflineModel
-from test_agents import RECORD, FakeFirewall, FakeRetriever
 
 PW = "correct-horse-battery"
 
@@ -148,6 +148,9 @@ def test_matter_numbers_and_listing(client, atty, para):
     assert [m["matter_number"] for m in listing] == ["M-0002", "M-0001"]
     assert listing[0]["document_count"] == 0 and listing[0]["last_run_status"] is None
     assert client.get("/api/matters/999", headers=atty).status_code == 404
+    # timestamps leave the API with a time zone, so browsers do not read UTC as local time
+    created = client.get("/api/matters/1", headers=atty).json()["created_at"]
+    assert created.endswith(("Z", "+00:00")), created
 
 
 def test_document_upload_redacts_and_stores_no_raw_pii(client, atty, session_factory, settings):
@@ -413,3 +416,18 @@ def test_plan_text_typed_by_the_attorney_is_redacted(client, atty):
         assert leaked not in blob
     assert drafted in r.json()["plan"]["items"][0]["elements"]  # drafted text is not re-redacted
     assert "Focus on retaliation" in r.json()["plan"]["instructions"]
+
+
+def test_built_web_app_is_served_with_client_side_routes(service, tmp_path):
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "index.html").write_text("<!doctype html><div id=root></div>")
+    (tmp_path / "assets" / "app.js").write_text("console.log(1)")
+    service.settings.frontend_dist = tmp_path
+    with TestClient(create_app(service)) as c:
+        assert "id=root" in c.get("/").text
+        assert "id=root" in c.get("/runs/7").text  # React routes fall back to index.html
+        assert c.get("/assets/app.js").text == "console.log(1)"
+        assert c.get("/api/no-such-endpoint").status_code == 404  # unknown API paths stay JSON 404s
+        assert c.get("/../backend/pyproject.toml").status_code in (200, 404)
+        assert "[project]" not in c.get("/../backend/pyproject.toml").text  # no path traversal
+        assert c.get("/api/health").json()["status"] in ("ok", "degraded")

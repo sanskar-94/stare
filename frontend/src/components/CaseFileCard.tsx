@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { EyeOff, FolderOpen, Pencil } from "lucide-react";
 import { api } from "../api/client";
 import type { CaseRecord, Court, Claim, Statute } from "../api/types";
 import { STATUTE_LABEL, claimLabel, errMsg } from "../util";
@@ -31,8 +32,8 @@ export default function CaseFileCard({ runId, record, courts, canEdit, onSaved }
   return (
     <section className="card" aria-label="Case file">
       <div className="card-h">
-        <h2>Case file</h2>
-        {canEdit && !editing && <button className="btn btn-sm" onClick={() => { setD(rec); setEditing(true); }}>Edit</button>}
+        <h2><FolderOpen size={16} aria-hidden="true" />Case file</h2>
+        {canEdit && !editing && <button className="btn btn-sm" onClick={() => { setD(rec); setEditing(true); }}><Pencil size={13} aria-hidden="true" />Edit</button>}
       </div>
       <div className="card-b space-y-3 text-[13px]">
         {!record && <p className="text-muted">The Intake Agent has not produced a case record yet.</p>}
@@ -54,7 +55,7 @@ export default function CaseFileCard({ runId, record, courts, canEdit, onSaved }
           </dl>
         )}
         {record && !editing && (
-          <div className="alert alert-warn !py-1.5 text-xs font-semibold">Personal details redacted: {rec.redaction_count}</div>
+          <div className="alert alert-warn flex items-center gap-1.5 !py-1.5 text-xs font-semibold"><EyeOff size={13} aria-hidden="true" />{rec.redaction_count} personal details redacted before any model saw the text</div>
         )}
         {editing && (
           <div className="space-y-3">

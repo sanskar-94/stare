@@ -7,6 +7,7 @@ Every state change that matters is written to the audit log.
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 import uuid
@@ -22,7 +23,17 @@ from stare.agents.base import AgentDeps
 from stare.agents.memo_firewall import MEMO_FIELDS, check_memo, export_violations
 from stare.agents.state import dump
 from stare.config import Settings, get_settings
-from stare.db.models import AgentStep, AuditLog, CaseFile, CitationCheckRow, CourtRow, Document, MemoRow, ResearchRun, User
+from stare.db.models import (
+    AgentStep,
+    AuditLog,
+    CaseFile,
+    CitationCheckRow,
+    CourtRow,
+    Document,
+    MemoRow,
+    ResearchRun,
+    User,
+)
 from stare.export.docx_exporter import MemoExporter
 from stare.graph.events import EventBus, EventSubscription, bus
 from stare.graph.orchestrator import build_graph
@@ -30,6 +41,8 @@ from stare.intake.planner import draft_plan
 from stare.llm import get_llm
 from stare.llm.base import ChatModel
 from stare.schemas import CaseRecord, Memo, ResearchPlan, TraceEvent
+
+log = logging.getLogger(__name__)
 
 EDITABLE_MEMO_FIELDS = MEMO_FIELDS  # every field the Firewall re-checks; nothing else is taken from an edit
 
@@ -76,6 +89,22 @@ class ResearchService:
         self.pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="stare-run")
         self._locks: dict[int, threading.Lock] = {}
         self._seq_lock = threading.Lock()
+
+    def warm_up(self) -> float:
+        """Load the search index and the embedding model before the first run; returns the seconds taken.
+
+        Called in a background thread when the API server starts, so the first research run does not pay the
+        model start-up (about 12 s on an 8 GB M1). Failures are logged, never raised: a missing index is
+        reported to the user by the run itself.
+        """
+        t0 = time.perf_counter()
+        try:
+            self.deps.retriever.search("Title VII retaliation materially adverse action", k=1)
+        except Exception as exc:  # index not built yet, optional package missing, ...
+            log.warning("warm-up skipped: %s", exc)
+        took = time.perf_counter() - t0
+        log.info("search index and embedding model ready in %.1f s", took)
+        return took
 
     # ================================================================================== public API
 

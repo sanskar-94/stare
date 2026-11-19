@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BookOpenCheck } from "lucide-react";
 import type { SourceItem } from "../lib/sources";
 import SourceCard from "./SourceCard";
 
@@ -13,18 +14,23 @@ export default function SourcesPanel({ items, onView }: { items: SourceItem[]; o
     adverse: items.filter((i) => i.adverse).length,
     blocked: items.filter(isBlocked).length,
   };
+  const verified = items.filter((i) => i.status === "verified").length;
   const shown = items.filter((i) => f === "all" || (f === "support" ? !i.adverse && !isBlocked(i) : f === "adverse" ? i.adverse : isBlocked(i)));
   const tabs: [Filter, string][] = [["all", "All"], ["support", "Support"], ["adverse", "Adverse"], ["blocked", "Blocked"]];
   return (
     <section className="card" aria-label="Sources and citation status">
-      <div className="card-h"><h2>Sources and citation status</h2></div>
-      <div role="tablist" aria-label="Filter sources" className="flex gap-1 border-b border-line px-3 pt-2">
-        {tabs.map(([k, label]) => (
-          <button key={k} role="tab" aria-selected={f === k} onClick={() => setF(k)}
-            className={`rounded-t-md border-b-2 px-3 py-1.5 text-sm font-semibold ${f === k ? "border-amber text-navy" : "border-transparent text-muted hover:text-navy"}`}>
-            {label} <span className="text-xs font-normal">({counts[k]})</span>
-          </button>
-        ))}
+      <div className="card-h">
+        <h2><BookOpenCheck size={16} aria-hidden="true" />Sources and citation status</h2>
+        {items.length > 0 && <span className="text-xs font-normal text-muted">{verified} of {items.length} verified</span>}
+      </div>
+      <div className="border-b border-line px-3 py-2.5">
+        <div role="tablist" aria-label="Filter sources" className="seg w-full justify-between">
+          {tabs.map(([k, label]) => (
+            <button key={k} role="tab" aria-selected={f === k} onClick={() => setF(k)} className="flex-1 justify-center">
+              {label} <span className="text-[11px] font-normal opacity-80">{counts[k]}</span>
+            </button>
+          ))}
+        </div>
       </div>
       <div className="card-b">
         {items.length === 0 ? (

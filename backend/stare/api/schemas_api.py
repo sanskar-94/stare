@@ -213,3 +213,4 @@ class HealthOut(BaseModel):
     llm_provider: str
     corpus: dict[str, int]
     index_built: bool
+    search_ready: bool | None = None  # False while the server is loading the index and model at start-up

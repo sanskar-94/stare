@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, ClipboardList, Hourglass } from "lucide-react";
 import { api } from "../api/client";
 import type { PlanItem, ResearchPlan } from "../api/types";
 import { errMsg, fmtTime, STATUTE_LABEL } from "../util";
@@ -25,7 +26,7 @@ export default function PlanEditor({ runId, plan, awaiting, isAttorney, onApprov
   if (!draft) {
     return (
       <section className="card" aria-label="Research plan">
-        <div className="card-h"><h2>Research plan</h2></div>
+        <div className="card-h"><h2><ClipboardList size={16} aria-hidden="true" />Research plan</h2></div>
         <p className="card-b text-muted">The plan appears after the Intake Agent has read the documents.</p>
       </section>
     );
@@ -44,12 +45,12 @@ export default function PlanEditor({ runId, plan, awaiting, isAttorney, onApprov
 
   return (
     <section className="card" aria-label="Research plan">
-      <div className="card-h"><h2>Research plan</h2><span className="text-xs font-normal text-muted">{checkedN} of {draft.items.length} selected</span></div>
+      <div className="card-h"><h2><ClipboardList size={16} aria-hidden="true" />Research plan</h2><span className="text-xs font-normal text-muted">{checkedN} of {draft.items.length} issues selected</span></div>
       <div className="card-b space-y-3 text-[13px]">
         <p><span className="label !mb-0">Question</span>{draft.question}</p>
         <ul className="space-y-1.5">
           {draft.items.map((it) => (
-            <li key={it.id} className="rounded-md border border-line">
+            <li key={it.id} className={`rounded-lg border ${it.checked ? "border-[#c8d5ea] bg-[#f8fafe]" : "border-line"}`}>
               <div className="flex items-start gap-2 p-2">
                 <input id={`pi-${it.id}`} type="checkbox" className="mt-1 h-4 w-4 accent-[#0b1f3a]" checked={it.checked} disabled={!editable}
                   onChange={(e) => setItem(it.id, { checked: e.target.checked })} />
@@ -91,12 +92,12 @@ export default function PlanEditor({ runId, plan, awaiting, isAttorney, onApprov
         {err && <div className="alert alert-bad" role="alert">{err}</div>}
         {awaiting ? (
           isAttorney ? (
-            <button className="btn btn-amber w-full !py-2" disabled={busy || checkedN === 0} onClick={approve}>{busy ? "Approving..." : "Approve plan"}</button>
+            <button className="btn btn-amber btn-lg w-full" disabled={busy || checkedN === 0} onClick={approve}><CheckCircle2 size={16} aria-hidden="true" />{busy ? "Approving..." : "Approve plan and start research"}</button>
           ) : (
-            <p className="alert alert-info text-center font-semibold">Waiting for attorney approval</p>
+            <p className="alert alert-info flex items-center justify-center gap-1.5 font-semibold"><Hourglass size={14} aria-hidden="true" />Waiting for attorney approval</p>
           )
         ) : draft.approved_at ? (
-          <p className="alert alert-ok font-semibold">Plan approved by attorney, {fmtTime(draft.approved_at)}</p>
+          <p className="alert alert-ok flex items-center gap-1.5 font-semibold"><CheckCircle2 size={15} aria-hidden="true" />Plan approved by the attorney at {fmtTime(draft.approved_at)}</p>
         ) : null}
       </div>
     </section>

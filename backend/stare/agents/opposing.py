@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from stare.agents.base import AgentResult, BaseAgent
 from stare.agents.precedent import PrecedentAgent, opinion_text, pick_quote
-from stare.agents.state import ResearchState, dump, load_authorities, load_case_record
+from stare.agents.state import ResearchState, dump, load_case_record
 from stare.intake.elements import PROCEDURAL, theory_for
 from stare.llm.base import LLMError
 from stare.schemas import Authority, CaseRecord, KeyDate

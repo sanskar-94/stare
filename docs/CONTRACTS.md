@@ -212,7 +212,7 @@ Auth: JWT bearer. `POST /api/auth/login {email,password} -> {access_token, token
 
 | Method | Path | Role | Notes |
 |---|---|---|---|
-| GET | /api/health | any | `{status, version, llm_provider, corpus: {opinions, statutes, chunks}, index_built}` |
+| GET | /api/health | any | `{status, version, llm_provider, corpus: {opinions, statutes, chunks}, index_built, search_ready}` (`search_ready` is false while the server loads the index and model at start-up) |
 | GET | /api/courts | auth | list of Court |
 | GET/POST | /api/users | admin | create `{name,email,password,role}` |
 | PATCH | /api/users/{id} | admin | role/active/password |

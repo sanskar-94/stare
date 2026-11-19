@@ -13,6 +13,7 @@ const OUT: Record<GateOutcome, { t: string; c: string }> = {
 const GATE_NAME = ["", "Citation extracted", "Case exists", "Quote matches", "Still good law"];
 
 const RANK_CLS = { binding: "chip-navy", persuasive: "chip-grey", flagged: "chip-warn" } as const;
+const BAR: Record<string, string> = { verified: "bg-[#16a34a]", warning: "bg-amber", blocked: "bg-[#dc2626]", unresolved: "bg-[#9aa5b6]", adverse: "bg-[#b42318]" };
 
 export default function SourceCard({ item, onView }: { item: SourceItem; onView: (item: SourceItem) => void }) {
   const [open, setOpen] = useState(false);
@@ -24,8 +25,9 @@ export default function SourceCard({ item, onView }: { item: SourceItem; onView:
       id={`src-card-${item.key}`}
       data-src={item.key}
       tabIndex={-1}
-      className={`card p-3 ${item.status === "blocked" ? "!border-red-300" : ""}`}
+      className={`card relative overflow-hidden p-3 pl-4 ${item.status === "blocked" ? "!border-red-300" : ""}`}
     >
+      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${BAR[item.adverse ? "adverse" : item.status] ?? BAR.unresolved}`} />
       <div className="flex flex-wrap items-center gap-1.5">
         <CheckBadge status={item.status} />
         {a?.rank && (
@@ -35,7 +37,7 @@ export default function SourceCard({ item, onView }: { item: SourceItem; onView:
         )}
         {item.adverse && <span className="chip chip-bad" title={a?.adverse_reason}>Adverse</span>}
       </div>
-      <h3 className="mt-1.5 font-semibold leading-snug text-navy">
+      <h3 className="mt-1.5 font-serif text-[15px] font-semibold leading-snug text-navy">
         {item.caseName ? <i>{item.caseName}</i> : <span className="text-muted">Unknown case</span>}
       </h3>
       <p className="font-mono text-xs text-ink/80">{item.citation}{a?.year ? ` (${a.year})` : ""}</p>

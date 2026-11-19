@@ -180,3 +180,19 @@ def test_cli_app_has_commands():
 
     names = {c.name or c.callback.__name__ for c in index_app().registered_commands}
     assert names == {"build", "search"}
+
+
+def test_query_cache_gives_identical_results_across_filtered_passes(retriever, corpus):
+    """A run repeats its queries in several filtered passes; cached vectors and scores must not change results."""
+    qs = ["retaliation materially adverse action", "but-for causation", "reasonable accommodation"]
+    first = {q: [(c.chunk_id, c.rrf_score) for c in retriever.search(q, k=10)] for q in qs}
+    assert set(retriever._qscores) >= set(qs)  # scored once ...
+    retriever.search_many(qs, k=10, kinds=["opinion"])  # ... and reused by a filtered pass
+    statutes = retriever.search_many(qs, k=10, kinds=["statute"])
+    assert statutes and all(c.kind == "statute" for c in statutes)
+    again = {q: [(c.chunk_id, c.rrf_score) for c in retriever.search(q, k=10)] for q in qs}
+    assert again == first
+    retriever._qvec.clear()
+    retriever._qscores.clear()
+    fresh = {q: [(c.chunk_id, c.rrf_score) for c in retriever.search(q, k=10)] for q in qs}
+    assert fresh == first

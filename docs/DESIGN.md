@@ -147,6 +147,8 @@ Embeddings are a pgvector `vector(dim)` on PostgreSQL and a float32 BLOB on SQLi
 
 ## 7. Deployment
 
-The laptop setup is SQLite, offline LLM and LSA, with `stare serve` and `npm run dev`.
+The laptop setup is SQLite, the offline LLM and bge-small (LSA without the `neural` extra). `stare serve` serves the
+built web app and the API on one port and loads the index and embedding model in the background at start-up;
+`npm run dev` is the development alternative.
 `docker-compose.yml` runs PostgreSQL 16 + pgvector, the API (uvicorn) and the web app (nginx serving
 the built SPA, proxying `/api` with SSE buffering off).

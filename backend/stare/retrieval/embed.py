@@ -127,11 +127,14 @@ class SentenceTransformerEmbedder:
 
     def _get(self):
         if self._model is None:
+            from stare._quiet import load_cached_first, quiet_ml_imports
+
+            quiet_ml_imports()
             import torch
             from sentence_transformers import SentenceTransformer  # optional dependency
 
             device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
-            self._model = SentenceTransformer(self.model_name, device=device)
+            self._model = load_cached_first(SentenceTransformer, self.model_name, device=device)
         return self._model
 
     def fit(self, texts: list[str]) -> None:

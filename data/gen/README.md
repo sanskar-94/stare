@@ -48,5 +48,5 @@ misstates some rules even when it uses the source's words, which a word-overlap 
 Off by default. With `STARE_MEMO_WRITER=stare_gen`, the Memo Agent adds, for each verified case authority, a
 sentence labelled "Summary (STARE-Gen)" before the verified quotation from that authority; a sentence that fails
 the grounding check is dropped. On the sample complaint STARE-Gen proposed nine sentences, three
-passed and six were dropped (memo ready in about 26 seconds instead of 19). Citations and quotations are still attached by code and checked by the Citation
+passed and six were dropped; writing the sentences added about 7 seconds to the run. Citations and quotations are still attached by code and checked by the Citation
 Firewall, so STARE-Gen cannot add a citation to a memo.

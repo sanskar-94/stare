@@ -21,6 +21,7 @@ data/index/
 data/cache/
 data/uploads/
 data/refresh.json
+data/.jwt_secret
 
 .DS_Store
 

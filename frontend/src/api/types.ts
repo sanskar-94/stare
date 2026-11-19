@@ -324,4 +324,5 @@ export interface Health {
   llm_provider: string;
   corpus: Record<string, number>;
   index_built?: boolean;
+  search_ready?: boolean | null;
 }

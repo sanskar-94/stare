@@ -16,10 +16,10 @@ from stare import DISCLAIMER
 from stare.agents.base import AgentResult, BaseAgent
 from stare.agents.state import ResearchState, dump, load_authorities, load_case_record, load_checks, load_plan
 from stare.courts.hierarchy import CourtHierarchy
-from stare.intake.elements import STATUTE_LABEL
-from stare.llm.base import LLMError
 from stare.gen.prompt import acceptable
 from stare.gen.writer import get_writer
+from stare.intake.elements import STATUTE_LABEL
+from stare.llm.base import LLMError
 from stare.schemas import Authority, CaseRecord, Memo, MemoCitation, ResearchPlan
 from stare.text import split_sentences
 

@@ -57,10 +57,21 @@ include = ["stare*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    # PyMuPDF's SWIG bindings, raised inside importlib; nothing to fix on our side
+    "ignore:builtin type (SwigPy|swigvarlink).*:DeprecationWarning",
+]
 markers = [
     "network: test needs internet access to free public endpoints (deselect with -m 'not network')",
 ]
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 target-version = "py312"
+
+[tool.ruff.lint]
+# pyflakes, pycodestyle errors, import order and bugbear. B008 is FastAPI/Typer's own Depends()/Option()
+# pattern; zip(strict=...) is left to the call sites.
+select = ["E4", "E7", "E9", "F", "I", "B"]
+ignore = ["B008", "B905"]

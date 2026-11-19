@@ -105,9 +105,7 @@ def _case_name_before(text: str, cite_start: int) -> tuple[str, int]:
     if not seg.endswith(","):
         return "", cite_start
     seg = seg.rstrip(", ")
-    m = None
-    for m in re.finditer(r"\s+v\.?\s+", seg):
-        pass
+    m = next(reversed(list(re.finditer(r"\s+v\.?\s+", seg))), None)  # the last " v. " in the segment
     if m is None:
         im = _IN_RE.search(seg + ",")
         if im:
@@ -425,7 +423,7 @@ def extract_citations(text: str) -> list[ExtractedCitation]:
     except Exception:  # pragma: no cover - eyecite resolution is best effort
         res = {}
     by_eye = {id(c): ec for c, ec in items if c is not None}
-    for resource, group in res.items():
+    for group in res.values():
         full = next((x for x in group if isinstance(x, FullCaseCitation)), None)
         if full is None or id(full) not in by_eye:
             continue

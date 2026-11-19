@@ -39,9 +39,11 @@ def main(out_path: str) -> dict:
         ops = list(dict.fromkeys(c.opinion_id for c in res if c.opinion_id))[:10]
         h = oid in ops
         with sf() as s:
-            r = classify(q); found, _ = resolve(s, r)
+            r = classify(q)
+            found, _ = resolve(s, r)
         t = oid in found
-        hyb += h; rout += t
+        hyb += h
+        rout += t
         rows.append({"q": q, "hybrid_top10": h, "routing": t, "route": r.kind})
     out = {"questions": len(qs), "hybrid_top10": hyb, "routing_exact": rout, "either": sum(r["hybrid_top10"] or r["routing"] for r in rows), "rows": rows}
     print(json.dumps({k: v for k, v in out.items() if k != "rows"}))

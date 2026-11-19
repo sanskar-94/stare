@@ -85,13 +85,18 @@ uv pip install --python .venv/bin/python -e '.[presidio,llm,dev,neural]'   # neu
 .venv/bin/stare ingest all --offline   # courts, 5,120 opinions, statutes, chunks (from data/seed + data/expansion, no network)
 .venv/bin/stare index build            # BM25 + bge-small dense index (≈35 min on an M1 GPU for 104k chunks; STARE_EMBEDDER=lsa: ≈2 min)
 .venv/bin/stare db seed-users          # attorney@ / paralegal@ / admin@stare.local, password: stare-demo
-.venv/bin/stare serve                  # http://127.0.0.1:8000  (OpenAPI docs at /docs)
 
-# frontend (second terminal)
-cd frontend
-npm install
-npm run dev                            # http://localhost:5173 (proxies /api to :8000)
+# web app: build it once
+cd ../frontend && npm install && npm run build
+
+# run everything with one command, then open http://127.0.0.1:8000
+cd ../backend && .venv/bin/stare serve # web app + API on one port (OpenAPI docs at /docs)
 ```
+
+`stare serve` serves the built web app and the API together, loads the search index and the embedding model in
+the background (about 15 seconds; the header shows "Loading search..." until then), and the interface shows a clear
+banner if the server stops. For frontend development, `npm run dev` in `frontend/` gives hot reload on
+http://localhost:5173 and proxies `/api` to port 8000.
 
 Run the whole pipeline in the terminal, with both gates auto-approved, and save the memo as DOCX:
 
@@ -113,7 +118,7 @@ All parties and personal details in them are fictional.
 | `stare index build` / `stare index search "query"` | Build or query the hybrid retrieval index |
 | `stare db init` / `db seed-users` / `db create-user EMAIL` | Database setup and users |
 | `stare demo [PDF]` | End-to-end run in the terminal |
-| `stare serve` | API server |
+| `stare serve` | Web app and API on http://127.0.0.1:8000 (build the web app once with `npm run build`) |
 | `stare eval run [--limit N]` | Gold set + Mata + export check + redaction + latency → `docs/evaluation/results.md` |
 | `stare eval mata` | Mata v. Avianca fixture only |
 | `stare gen data` / `gen train` / `gen eval` | Build the STARE-Gen training pairs, fine-tune the model (about 45 min on an 8 GB M2), compare it with the base model |
